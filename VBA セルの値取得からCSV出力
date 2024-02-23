@@ -12,7 +12,7 @@ Sub Cell_count()
     '*** データのあるセル範囲取得 開始*** ●
     ' シート名
     Dim csvSh As Worksheet
-    Set csvSh = ThisWorkbook.Worksheets("Sheet14")  'シート番号
+    Set csvSh = ThisWorkbook.Worksheets("Sheet1")  'シート番号 Sheet1など
     
     ' 行ごとのデータ数を格納する配列dataCountを初期化 *** ●●
     Dim dataCount() As Long
