@@ -192,3 +192,139 @@ CSV ファイルへの変換:CSV ファイルの保存先を指定し、書き�
 
 Excelシートからデータを抽出し、その最大の行番号と列番号を特定し、それをCSVファイルに書き込むためのものです。データの取得と処理が行われ、最終的にCSVファイルに変換されます。
 コードは、シンプルながら効率的にデータを処理し、目的の出力を生成するように設計されています。
+
+
+
+
+
+
+'改訂版
+Private Const MAX_COL As Long = 100
+Private Const MAX_ROW As Long = 100
+
+Sub Cell_count()
+    MsgBox ("データが格納されたセルの末尾の" & vbCrLf & "列番号・行番号をお知らせ") 'vbCrLfはメッセージボックスの改行
+    '★ヨコ方向のセルについて　末尾データの列の場所を求める
+    MsgBox ("※セルを右に向かって見ています")
+    MsgBox ("行の使用済みセル最大列番号を求めます")
+    '*** データのあるセル範囲取得 開始*** ●
+    ' シート名
+    Dim csvSh As Worksheet
+    Set csvSh = ThisWorkbook.Worksheets("Sheet1")  'シート番号
+    
+    ' 行ごとのデータ数を格納する配列dataCountを初期化 *** ●●
+    Dim dataCount() As Long
+    '配列サイズを確定
+    ReDim dataCount(1 To MAX_ROW) As Long
+    
+    ' 配列のループ
+    ' 行の数 i
+    Dim i As Long
+    ' 1行から順にデータ数をカウント
+    For i = 1 To MAX_ROW
+        ' 各行の最終列を取得
+        Dim lastCol As Long
+        lastCol = csvSh.Cells(i, csvSh.Columns.Count).End(xlToLeft).Column
+        '*** 最終列を1と置く　これがないと先頭行データが空白のとき最終列として判断できない ***
+        ' 先頭行データが設定されているかいないか
+        If lastCol = 1 And IsEmpty(csvSh.Cells(i, 1).Value) Then '最終列が便宜上1列目 かつ 先頭列データが空白
+            dataCount(i) = 0  '行のデータ数0とする
+        Else
+            ' データ数をカウント
+            dataCount(i) = lastCol
+        End If
+    Next i
+    
+    '--------------------------------------------------------------------------------
+    MsgBox ("データが格納されたセルの末尾の" & vbCrLf & "行番号・列番号をお知らせ") 'vbCrLfはメッセージボックスの改行
+    MsgBox ("※セルを下に向かって見ています")
+    MsgBox ("列の使用済みセル最大行番号を求めます")
+    '*** データのあるセル範囲取得 開始***
+    ' 列ごとのデータ数を格納する配列dataCountを再初期化 *** ●●
+    '配列サイズを確定
+    ReDim dataCount(1 To MAX_COL) As Long
+    
+    '配列のループ
+    ' 列の数 j
+    Dim j As Long
+    ' 1列から順にデータ数をカウント
+    For j = 1 To MAX_COL
+        ' 各列の最終行を取得
+        Dim lastRow As Long
+        lastRow = csvSh.Cells(csvSh.Rows.Count, j).End(xlUp).Row
+        '*** 最終行を1と置く　これがないと先頭列データが空白のとき最終行として判断できない ***
+        ' 先頭列データが設定されているかいないか
+        If lastRow = 1 And IsEmpty(csvSh.Cells(1, j).Value) Then '最終行が便宜上1行目 かつ 先頭行データが空白
+            dataCount(j) = 0  '列のデータ数0とする
+        Else
+            ' データ数をカウント
+            dataCount(j) = lastRow
+        End If
+    Next j
+    
+    '--------------------------------------------------------------------------------
+    MsgBox ("シートCSV変換を開始します")
+    '*** 書き込み工程 開始*** ◆◆◆
+    Dim csvVal As String 'セル座標のデータをcsvValとして取得
+    '使用済み行rowの数の取得　最大値1048576行から上の範囲
+    'lastRow = csvSh.Cells(csvSh.Rows.Count, 1).End(xlUp).Row
+    '使用済み列columnの数16384の取得 最大値XFD列から左の範囲
+    'lastCol = csvSh.Cells(1, csvSh.Columns.Count).End(xlToLeft).column
+
+    ' CSVファイルの保存先を指定
+    Dim outputFile As String
+    outputFile = "C:\Users\swp\Desktop\Excelマクロ\CSVFile.csv"
+
+    ' 空ファイル番号を取得
+    Dim csvNum As Long
+    csvNum = FreeFile
+
+    ' CSVファイルを書き込みモードで開く
+    Open outputFile For Output As #csvNum
+    ' 行方向要素数分ループ
+    For i = 1 To MAX_ROW
+        ' 列方向要素数分ループ
+        For j = 1 To MAX_COL
+            ' セルの値を配列から定義
+            csvVal = csvSh.Cells(i, j).Value
+            ' セルが空でない場合に値を書き込む
+            If j = dataCount(i) Then
+                ' 最終列の場合、デフォルトで改行コードが付与
+                Print #csvNum, csvVal
+            ElseIf j <= dataCount(i) And csvVal <> "" Then
+                ' 最終列でない場合、かつセルに値がある場合
+                Print #csvNum, csvVal & ",";
+            End If
+        Next j
+        ' データのない行にカンマを出力しないための改行
+        If i Mod 2 = 0 And dataCount(i) > 0 Then
+            Print #csvNum, ""
+        End If
+    Next i
+
+    ' ファイルを閉じる
+    Close #csvNum
+
+    MsgBox ("シートCSV変換 出力完了しました")
+    '*** 書き込み工程 終了*** ◆◆◆
+    
+End Sub
+
+'文章で解説
+定数の定義:
+MAX_COL および MAX_ROW は、それぞれ行と列の最大数を指定します。このコードでは、それぞれ100と設定されています。
+Sub Cell_count():
+このサブルーチンは、セルのデータをカウントし、CSVファイルに変換する機能を持っています。
+データのカウント:
+最初の部分では、行ごとと列ごとのデータ数を数えます。
+行ごとのデータ数は配列 dataCount() に格納されます。
+CSVファイルへの書き込み:
+CSVファイルは、指定されたファイルパスに書き込みモードで開かれます。
+行ごとにループが行われ、各行のデータが列ごとに処理されます。
+データがある場合、セルの値とカンマがCSVファイルに書き込まれます。
+データがない行には、カンマが書き込まれません。また、偶数行の間には空行が挿入されます。
+処理の終了:
+CSVファイルへの書き込みが完了したら、ファイルが閉じられます。
+最後に、処理が完了したことをユーザーに通知するメッセージボックスが表示されます。
+
+このコードは、ExcelのデータをCSV形式に変換するプロセスを実行します。データの存在しない行にはカンマが出力されず、偶数行の間には空行が挿入されるという特徴があります。
