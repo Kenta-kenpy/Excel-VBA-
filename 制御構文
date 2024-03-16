@@ -1,1 +1,776 @@
+'If文サンプル　偶数奇数判断
+Sub EvenOdd()
+    Dim x As Integer '整数型変数x
+    x = InputBox("整数の入力:")
+    If x Mod 2 = 0 Then 'xを2で割ったときの余りが0
+        MsgBox (x & "は偶数です")
+    Else '上記以外によりxを2で割ったときの余りが1
+        MsgBox (x & "は奇数です")
+    End If
+End Sub
 
+'VBA If While組み合わせ
+Sub IfWhile()
+    Dim num As Integer
+    num = 1 '初期値1
+    x = InputBox("整数の入力:")
+    Do While num <= x
+        If num Mod 2 = 0 Then '2で割った余りが0
+            MsgBox (num & " は偶数です。")
+        Else '2で割った余りが1
+            MsgBox (num & " は奇数です。")
+        End If
+        num = num + 1
+    Loop
+End Sub
+
+'九九　二重ループ
+Sub 九九()
+    Dim i As Long, j As Long '変数i,変数j
+    MsgBox ("九九を示します")
+    '九九の計算
+    For i = 1 To 9 '行番号
+        For j = 1 To 9 '列番号
+            MsgBox (i & "×" & j & "=" & i * j)
+        Next j
+    Next i
+End Sub
+
+'Select case文サンプル テレビチャンネル
+Sub tv()
+    Dim ch As Integer '整数型変数ch
+    MsgBox ("テレビ局を示します")
+    ch = InputBox("テレビチャンネル番号を入力") '入力を受け付ける
+    Select Case ch 'Select Case 変数
+    Case 1 'Case 変数　※変数を変化させる
+        MsgBox (ch & "チャンネルは NHK総合") '処理
+    Case 2
+        MsgBox (ch & "チャンネルは NHKEテレ")
+    Case 3
+        MsgBox (ch & "チャンネルは テレビ神奈川")
+    Case 4
+        MsgBox (ch & "チャンネルは 日本テレビ")
+    Case 5
+        MsgBox (ch & "チャンネルは テレビ朝日")
+    Case 6
+        MsgBox (ch & "チャンネルは TBSテレビ")
+    Case 7
+        MsgBox (ch & "チャンネルは テレビ東京")
+    Case 8
+        MsgBox (ch & "チャンネルは フジテレビ")
+    Case 9
+        MsgBox (ch & "チャンネルは TOKYO MX")
+    Case Else
+        MsgBox ("放送局が設定されていません")
+    End Select
+End Sub
+
+'select～case文をif文に書き換える
+
+'テレビチャンネル
+Sub tvIf()
+    Dim ch As Integer '整数型変数 ch
+    MsgBox ("テレビ局を示します")
+    ch = InputBox("テレビチャンネル番号を入力") '入力を受け付ける
+    'If～Then, ElseIf～Then, Else文
+    If ch = 1 Then
+        MsgBox (ch & "チャンネルは NHK総合")
+    ElseIf ch = 2 Then
+        MsgBox (ch & "チャンネルは NHKEテレ")
+    ElseIf ch = 3 Then
+        MsgBox (ch & "チャンネルは テレビ神奈川")
+    ElseIf ch = 4 Then
+        MsgBox (ch & "チャンネルは 日本テレビ")
+    ElseIf ch = 5 Then
+        MsgBox (ch & "チャンネルは テレビ朝日")
+    ElseIf ch = 6 Then
+        MsgBox (ch & "チャンネルは TBSテレビ")
+    ElseIf ch = 7 Then
+        MsgBox (ch & "チャンネルは テレビ東京")
+    ElseIf ch = 8 Then
+        MsgBox (ch & "チャンネルは フジテレビ")
+    ElseIf ch = 9 Then
+        MsgBox (ch & "チャンネルは TOKYO MX")
+    Else
+        MsgBox ("放送局が設定されていません")
+    End If
+End Sub
+
+'処理の繰り返し回数が不明な場合
+
+Sub Loopテスト消費税()
+    Dim total As Long '合計金額
+    Dim nedan As Long '商品価格
+    Dim yosan As Long '予算
+    Dim num As Long   '商品購入数
+    Dim zei As Double '消費税率
+    
+    yosan = InputBox("予算を入力してください")
+    nedan = InputBox("商品価格を入力してください")
+    zei = InputBox("消費税率を入力してください")
+    
+    total = 0 ' 合計金額totalを初期化
+    num = 0 ' 購入数numを初期化
+    
+    Do While (total + nedan) <= yosan ' 消費税抜きの価格が予算内
+        total = total + nedan
+        num = num + 1 ' 購入数を加算
+    Loop
+    
+    MsgBox ("予算" & yosan & "円以内で" & nedan & "円の商品は税抜きで" & num & "個買えます")
+    
+    total = 0 ' 合計金額totalを再初期化
+    num = 0 ' 購入数numを再初期化
+    
+    Do While (total + (nedan * (1 + zei / 100))) <= yosan ' 消費税込みの価格が予算内
+        total = total + (nedan * (1 + zei / 100)) ' 消費税を加算
+        num = num + 1 ' 購入数を加算
+    Loop
+    
+    MsgBox ("予算" & yosan & "円以内で" & nedan & "円の商品は税込みで" & num & "個買えます")
+    
+End Sub
+
+Sub LoopTestUntil() ' Untilループについて
+    ' 条件式が真になるまで
+    Dim manpukudo As Double
+    Dim count As Integer
+    
+    manpukudo = 0  '満腹度の初期化
+    count = 0 'おまんじゅうの数を初期化
+    
+    Do Until (manpukudo >= 99)
+        manpukudo = manpukudo + 3 '満腹度の増加％ 1個につき3%満腹になるとしたら
+        count = count + 1 '食べる数をカウント
+        MsgBox ("おまんじゅう" & count & "個食べました" & vbCrLf & "満腹度は" & manpukudo & "%です")
+    Loop
+        
+    MsgBox ("おまんじゅう" & count & "個目で満腹です")
+    
+End Sub
+
+'Forループの使い方
+Sub ForLoop()
+    Dim csvSh As Worksheet
+    Set csvSh = ThisWorkbook.Worksheets("Sheet1")
+    
+    Dim i As Long, j As Long '変数i,変数j
+    MsgBox ("ある行の列番号が末尾まで行くと行番号が増えこのとき列番号は1に戻ります")
+    'For二重ループがどのように変化するのか
+    For i = 1 To 10 '行番号(ヨコに見る)
+        For j = 1 To 7 '列番号(タテに見る)
+        'セルが空白だったら
+    If csvSh.Cells(i, j).Value = "" Then
+        MsgBox ("(" & i & "," & j & ")" & vbCrLf & "今のセルは" & i & "行" & j & "列です" & vbCrLf & "このセルは空白") 'セルの位置　セルが空白というメッセージを出力
+    Else 'セルに何か値があれば
+        MsgBox ("(" & i & "," & j & ")" & vbCrLf & "今のセルは" & i & "行" & j & "列です" & vbCrLf & "セルの値  " & csvSh.Cells(i, j)) 'セルの位置　vbCrLfはメッセージボックスの改行 セルの値を表示
+    End If
+        Next j
+    Next i
+
+End Sub
+
+'For Next文サンプル 数字の和
+Sub totalnum()
+    Dim S As Integer, x As Integer, owari As Integer  '整数型変数s,x,owari
+    S = 0
+    owari = InputBox("1からどこまでの合計を求めますか")
+    For x = 1 To owari
+        S = S + x
+    Next x 'ForとNextはインデントを合わせる
+    
+    MsgBox ("合計は" & S) '文字列の連結は&で行う
+End Sub
+
+'For Next文サンプル カウントダウン
+Sub CountDown()
+    Dim t As Integer
+    MsgBox ("カウントダウンを開始します")
+    t = InputBox("カウントダウンを開始する秒数を指定")
+    For t = t To 0 Step -1 '今度はForループにStepで間隔を指定する
+        If t = 0 Then '0になった瞬間にタイムアップの文字を表示する
+            MsgBox ("タイムアップ")
+        Else '10～1まではカウント秒を表示
+            MsgBox (t & "秒!")
+        End If
+    Next t
+End Sub
+
+'For Next文 偶数表示
+Sub EvenNum()
+    Dim even As Integer
+    Dim count As Integer
+    MsgBox ("1～100の偶数を表示")
+    
+    For even = 2 To 101 Step 2
+        count = count + 1
+        MsgBox (even & " は " & count & "番目の偶数です")
+    Next even
+End Sub
+
+'For Next文 奇数表示
+Sub OddNum()
+    Dim odd As Integer
+    Dim count As Integer
+    MsgBox ("1～100の奇数を表示")
+    
+    For odd = 1 To 100 Step 2
+        count = count + 1
+        MsgBox (odd & " は " & count & "番目の奇数です")
+    Next odd
+End Sub
+
+'数字の和
+Sub totalnumWhile()
+    Dim S As Integer, x As Integer, owari As Integer  '整数型変数s,x,owari　x:その都度足す数字　owari:どこまでの範囲か
+    S = 0 '初期値　合計
+    owari = InputBox("1からどこまでの合計を求めますか")
+    x = 1 '初期値　足していく数字
+    Do While (x <= owari) '条件の指定
+        S = S + x
+        x = x + 1 'xをインクリメント
+    Loop 'While文の終了を示す
+    MsgBox ("合計は" & S) '文字列の連結は&で行う
+End Sub
+
+'カウントダウン
+Sub CountDownWhile()
+    Dim t As Integer
+    MsgBox ("カウントダウンを開始します")
+    t = InputBox("カウントダウンを開始する秒数を指定")
+    MsgBox (t & "秒!")
+    Do While (t >= 0) 'tが0になるまで
+        t = t - 1 '1づつ減らす
+        If t = 0 Then '0になった瞬間にタイムアップの文字を表示する
+            MsgBox ("タイムアップ")
+        ElseIf t < 0 Then '-1秒の時に何も出さない処理
+            'MsgBox ("")
+        Else '10～1まではカウント秒を表示
+            MsgBox (t & "秒!")
+        End If
+    Loop
+End Sub
+
+'カウントダウン
+'同じ意味だが　Whileでt>0にするとt<0のとき空白を出す処理を書く必要がある
+Sub CountDownWhile_ver2()
+    Dim t As Integer
+    MsgBox ("カウントダウンを開始します")
+    t = InputBox("カウントダウンを開始する秒数を指定")
+    MsgBox (t & "秒!")
+    Do While (t > 0) 'tが0になるまで
+        t = t - 1 '1づつ減らす
+        If t = 0 Then '0になった瞬間にタイムアップの文字を表示する
+            MsgBox ("タイムアップ")
+        ElseIf t < 0 Then '-1秒の時に何も出さない処理
+            MsgBox ("")
+        Else '10～1まではカウント秒を表示
+            MsgBox (t & "秒!")
+        End If
+    Loop
+End Sub
+
+'偶数表示
+Sub EvenNum_while()
+    Dim even As Integer
+    Dim count As Integer
+    MsgBox ("1～100の偶数を表示")
+    
+    Do While (even < 100) '<=にすると102まで数えることになる
+        'even = 0 '初期値を与えてはならない　無限に0になる
+        even = even + 2
+        count = count + 1
+        MsgBox (even & " は " & count & "番目の偶数です")
+    Loop
+End Sub
+
+'奇数表示
+' odd = 1の初期値をDo Whileループ外に置くと1に　Do Whileループ内に置くと無限
+Sub OddNum_while()
+    Dim odd As Integer
+    Dim count As Integer
+    MsgBox ("1～100の奇数を表示")
+    
+    Do While (odd < 100) '<=にすると101まで数えることになる
+        odd = odd + 2 ' 奇数を更新
+        count = count + 1 ' カウントを増やす
+        MsgBox (odd - 1 & " は " & count & "番目の奇数です") 'odd-1で1開始表示になるように調整
+    Loop
+
+End Sub
+
+Sub 平方根For()
+    Dim a As Integer '整数型変数a　平方根を1から順に求める自然数の範囲
+    Dim n As Integer '整数型変数n  カウンタ
+    Dim root As Double '倍精度浮動小数点数型root
+    MsgBox ("自然数の平方根を1から順に求めます")
+    a = InputBox("求める範囲の自然数を入力")
+    For n = 1 To a
+        root = Sqr(n) '平方根を計算
+        MsgBox (n & "の平方根は" & Format(root, "0.0000") & "です") '表示する桁数のFormat指定 小数第4位まで
+    Next n
+End Sub
+
+Sub 円の面積For()
+    Dim r As Integer ' 倍精度浮動小数点数型r 円の半径
+    Dim n As Integer ' 倍精度浮動小数点数型変数n カウンタ
+    Dim S As Double ' 倍精度浮動小数点数型r 円の面積
+    MsgBox ("半径1cmから半径を大きくして円の面積を求めます")
+    r = InputBox("円の半径の上限を入力")
+    For n = 1 To r
+        S = WorksheetFunction.Pi * n ^ 2
+        MsgBox ("半径" & n & "の円の面積は" & Format(S, "0.0000000") & "です") '表示する桁数のFormat指定 小数第7位まで
+    Next n
+End Sub
+
+'For～Next文をDoWhile文に書き換える
+'平方根
+Sub 平方根While()
+    Dim a As Integer ' 整数型変数a　平方根を1から順に求める自然数の範囲
+    Dim n As Integer ' 整数型変数n カウンタ
+    Dim root As Double ' 倍精度浮動小数点数型root
+    MsgBox ("自然数の平方根を1から順に求めます")
+    a = InputBox("求める範囲の自然数を入力")
+    n = 1 ' カウンタを初期化
+    Do While (n <= a) ' 条件の指定（nがa以下の間ループ）
+        root = Sqr(n) ' 平方根を計算
+        MsgBox (n & "の平方根は" & Format(root, "0.0000") & "です") ' 表示する桁数のFormat指定 小数第4位まで
+        n = n + 1 ' カウンタをインクリメント
+    Loop
+End Sub
+
+'円の面積
+Sub 円の面積While()
+    Dim r As Integer ' 倍精度浮動小数点数型r 円の半径
+    Dim n As Integer ' 倍精度浮動小数点数型変数n カウンタ
+    Dim S As Double ' 倍精度浮動小数点数型r 円の面積
+    MsgBox ("半径1cmから半径を大きくして円の面積を求めます")
+    r = InputBox("円の半径の上限を入力")
+    n = 1 'カウンタを初期化
+    Do While (n <= r) ' 条件の指定(nがr以下の間ループ)
+        S = WorksheetFunction.Pi * n ^ 2
+        MsgBox ("半径" & n & "の円の面積は" & Format(S, "0.0000000") & "です") '表示する桁数のFormat指定 小数第7位まで
+        n = n + 1 'カウンタをインクリメント
+    Loop
+End Sub
+
+
+'配列
+Sub Data_array()
+    Dim i As Long
+    Dim j As Long
+    Dim a() As Integer ' 配列サイズは定数で与える　Dim a(10) As Integerとすると長さ10の配列になる　指定しないと単に配列が用意されるだけ
+    j = InputBox("配列サイズの指定")
+    ReDim a(j) As Integer '上記でサイズ指定しない場合ReDimでサイズ指定できる
+    '↑配列のサイズが決まる
+
+    ' ループで配列に値を入力
+    For i = LBound(a) To UBound(a) '0 To UBound(a)のこと
+        a(i) = InputBox("任意の数値を入力")
+    Next i  '←配列の要素の値を任意で与える
+    
+    ' 配列の要素を0番目から順番に表示
+    For i = LBound(a) To UBound(a)
+        MsgBox ("配列aの" & i & "番目の要素は" & a(i) & "です")  '配列のサイズ分の要素の値を0番目から末尾まで順番に表示する
+    Next i
+End Sub
+
+'配列の要素を一覧表示する(拡張)
+Sub Data_array2()
+    Dim i As Long
+    Dim j As Long
+    Dim a() As Integer
+    
+    j = InputBox("配列サイズの指定")
+    ReDim a(j) As Integer
+
+    ' ループで配列に値を入力
+    For i = LBound(a) To UBound(a) '0 To UBound(a)のこと
+        a(i) = InputBox("任意の数値を入力")
+    Next i '←配列の要素の値を任意で与える
+    
+    ' 配列の要素を一覧で表示
+    Dim output As String
+    output = "<配列aの要素一覧>" & vbCrLf
+    For i = LBound(a) To UBound(a) '0 To UBound(a)のこと
+        output = output & "要素 " & i & ": " & a(i) & vbCrLf '上記で指定した"<配列aの要素一覧>"の文字列の後に改行 その後 "要素"i:a(i)という形式で表示し改行　要素数分繰り返す
+    Next i
+    MsgBox (output)
+End Sub
+
+'配列の要素を一覧表示する(横並び)
+Sub Data_array3()
+    Dim i As Long
+    Dim j As Long
+    Dim a() As Integer
+    
+    j = InputBox("配列サイズの指定")
+    ReDim a(j) As Integer
+
+    ' ループで配列に値を入力
+    For i = LBound(a) To UBound(a)
+        a(i) = InputBox("任意の数値を入力")
+    Next i '←配列の要素の値を任意で与える
+    
+    ' 配列の要素をスペース区切りで横一列に並べて表示
+    Dim output As String
+    output = "<配列aの要素一覧>" & vbCrLf
+    For i = LBound(a) To UBound(a)
+        output = output & a(i) & " " '要素a(i)の後ろにスペースを空けて出力
+    Next i
+
+    MsgBox (output)
+End Sub
+
+
+'配列の要素の最大値最小値平均値を求める
+Sub Data_arrayMaxMinAve()
+    Dim i As Long
+    Dim j As Long
+    Dim a() As Integer
+    
+    j = InputBox("配列サイズの指定 ※インデックス0始まりに注意")
+    ReDim a(j) As Integer  'サイズjの配列を再定義
+
+    ' ループで配列に値を入力
+    For i = LBound(a) To UBound(a)
+        a(i) = InputBox("任意の数値を入力")
+    Next i '←配列の要素の値を任意で与える
+    
+    ' 配列の要素をスペース区切りで横一列に並べて表示
+    Dim output As String
+    output = "<配列aの要素一覧>" & vbCrLf
+    For i = LBound(a) To UBound(a)
+        output = output & a(i) & " " '要素a(i)の後ろにスペースを空けて出力
+    Next i
+    
+    MsgBox (output) '今回の配列を表示
+
+    ' 最大値を求める
+    Dim max As Integer
+    Dim maxIndex As Long ' 最大値の要素番号を保持する変数を追加
+    max = a(0) ' 仮の最大値を配列先頭要素にする
+    maxIndex = 0 ' 最大値の要素番号
+    
+    For i = LBound(a) To UBound(a)
+        If max < a(i) Then ' 先頭要素より大きければ
+            max = a(i)
+            maxIndex = i ' 最大値の要素番号を更新 最大値が見つかった時の i の値を別の変数に保存
+        End If
+    Next i
+    
+    ' 最小値を求める
+    Dim min As Integer
+    Dim minIndex As Long ' 最小値の要素番号を保持する変数を追加
+    min = a(0) ' 仮の最小値を配列先頭要素にする
+    minIndex = 0 ' 最小値の要素番号
+    
+    For i = LBound(a) To UBound(a)
+        If min > a(i) Then ' 先頭要素より小さければ
+            min = a(i)
+            minIndex = i ' 最小値の要素番号を更新 最小値が見つかった時の i の値を別の変数に保存
+        End If
+    Next i
+    
+    ' 平均値を求める
+    Dim ave As Double '小数だからDouble型
+    ave = WorksheetFunction.average(a)
+    '出力桁数の指定
+    Dim average As Double '小数だからDouble型
+    average = Format(ave, "0.00") '小数点以下2桁まで表示
+    
+    'メッセージ
+    MsgBox (output & vbCrLf & "配列の最大値: " & max & vbCrLf & "→" & maxIndex & "番目の要素" & vbCrLf & "配列の最小値: " & min & vbCrLf & "→" & minIndex & "番目の要素" & vbCrLf & "配列の平均値: " & average)
+    
+End Sub
+
+'何月を日本の呼び方にすると
+Sub Japanese_Month()
+    Dim tuki(11) As String
+    Dim m As Integer
+    m = InputBox("1～12の数字を入力してください")
+    If m = 1 Then
+        tuki(0) = "睦月"
+    ElseIf m = 2 Then
+        tuki(1) = "如月"
+    ElseIf m = 3 Then
+        tuki(2) = "弥生"
+    ElseIf m = 4 Then
+        tuki(3) = "卯月"
+    ElseIf m = 5 Then
+        tuki(4) = "皐月"
+    ElseIf m = 6 Then
+        tuki(5) = "水無月"
+    ElseIf m = 7 Then
+        tuki(6) = "文月"
+    ElseIf m = 8 Then
+        tuki(7) = "葉月"
+    ElseIf m = 9 Then
+        tuki(8) = "長月"
+    ElseIf m = 10 Then
+        tuki(9) = "神無月"
+    ElseIf m = 11 Then
+        tuki(10) = "霜月"
+    ElseIf m = 12 Then
+        tuki(11) = "師走"
+    Else
+        MsgBox ("")
+    End If
+    
+    MsgBox (m & "月は" & tuki(m - 1) & "といいます") '配列は0始まりのため
+End Sub
+
+'配列
+Sub SeizaSelectCase()
+    '星座を誕生日から求める
+    '星座の配列
+    Dim ZodiacSigns(11) As String
+    '配列の要素
+    ZodiacSigns(0) = "みずがめ座"
+    ZodiacSigns(1) = "うお座"
+    ZodiacSigns(2) = "おひつじ座"
+    ZodiacSigns(3) = "おうし座"
+    ZodiacSigns(4) = "ふたご座"
+    ZodiacSigns(5) = "かに座"
+    ZodiacSigns(6) = "しし座"
+    ZodiacSigns(7) = "おとめ座"
+    ZodiacSigns(8) = "てんびん座"
+    ZodiacSigns(9) = "さそり座"
+    ZodiacSigns(10) = "いて座"
+    ZodiacSigns(11) = "やぎ座"
+    
+    Dim M As Integer
+    M = InputBox("誕生月を入力") '月を入力
+    Dim D As Integer
+    D = InputBox("誕生日付を入力") '日を入力
+    
+    Dim SignIndex As Integer
+    '月はSelect Case文で選択し　日はIfThenElse文で場合分け
+    Select Case M
+        Case 1 '1月
+            If D >= 20 Then
+                SignIndex = 0
+            Else
+                SignIndex = 11
+            End If
+        Case 2 '2月
+            If D >= 19 Then
+                SignIndex = 1
+            Else
+                SignIndex = 0
+            End If
+        Case 3 '3月
+            If D >= 21 Then
+                SignIndex = 2
+            Else
+                SignIndex = 1
+            End If
+        Case 4 '4月
+            If D >= 20 Then
+                SignIndex = 3
+            Else
+                SignIndex = 2
+            End If
+        Case 5 '5月
+            If D >= 21 Then
+                SignIndex = 4
+            Else
+                SignIndex = 3
+            End If
+        Case 6 '6月
+            If D >= 22 Then
+                SignIndex = 5
+            Else
+                SignIndex = 4
+            End If
+        Case 7 '7月
+            If D >= 23 Then
+                SignIndex = 6
+            Else
+                SignIndex = 5
+            End If
+        Case 8 '8月
+            If D >= 23 Then
+                SignIndex = 7
+            Else
+                SignIndex = 6
+            End If
+        Case 9 '9月
+            If D >= 23 Then
+                SignIndex = 8
+            Else
+                SignIndex = 7
+            End If
+        Case 10 '10月
+            If D >= 24 Then
+                SignIndex = 9
+            Else
+                SignIndex = 8
+            End If
+        Case 11 '11月
+            If D >= 23 Then
+                SignIndex = 10
+            Else
+                SignIndex = 9
+            End If
+        Case 12 '12月
+            If D >= 22 Then
+                SignIndex = 11
+            Else
+                SignIndex = 10
+            End If
+    End Select
+    
+    MsgBox (M & "月" & D & "日生まれの人の星座は" & ZodiacSigns(SignIndex) & "です")
+End Sub
+
+'みずがめ 1/20～2/18　うお 2/19～3/20  おひつじ　3/21～4/19　おうし 4/20～5/20　ふたご 5/21～6/21　かに 6/22～7/22
+'しし 7/23～8/22　おとめ 8/23～9/22 てんびん　9/23～10/23　さそり 10/24～11/22　いて 11/23～12/21　やぎ 12/22～1/19
+
+
+Sub SeizaIf()
+    '星座を誕生日から求める
+    '星座の配列
+    Dim ZodiacSigns(11) As String
+    '配列の要素
+    ZodiacSigns(0) = "みずがめ座"
+    ZodiacSigns(1) = "うお座"
+    ZodiacSigns(2) = "おひつじ座"
+    ZodiacSigns(3) = "おうし座"
+    ZodiacSigns(4) = "ふたご座"
+    ZodiacSigns(5) = "かに座"
+    ZodiacSigns(6) = "しし座"
+    ZodiacSigns(7) = "おとめ座"
+    ZodiacSigns(8) = "てんびん座"
+    ZodiacSigns(9) = "さそり座"
+    ZodiacSigns(10) = "いて座"
+    ZodiacSigns(11) = "やぎ座"
+    
+    Dim M As Integer
+    M = InputBox("誕生月を入力") '月を入力
+    Dim D As Integer
+    D = InputBox("誕生日を入力") '日を入力
+    
+    Dim SignIndex As Integer
+    '月はIf文で選択し、日はIfThenElse文で場合分け
+    If M = 1 Then
+        If D >= 20 Then
+            SignIndex = 0
+        Else
+            SignIndex = 11
+        End If
+    ElseIf M = 2 Then
+        If D >= 19 Then
+            SignIndex = 1
+        Else
+            SignIndex = 0
+        End If
+    ElseIf M = 3 Then
+        If D >= 21 Then
+            SignIndex = 2
+        Else
+            SignIndex = 1
+        End If
+    ElseIf M = 4 Then
+        If D >= 20 Then
+            SignIndex = 3
+        Else
+            SignIndex = 2
+        End If
+    ElseIf M = 5 Then
+        If D >= 21 Then
+            SignIndex = 4
+        Else
+            SignIndex = 3
+        End If
+    ElseIf M = 6 Then
+        If D >= 22 Then
+            SignIndex = 5
+        Else
+            SignIndex = 4
+        End If
+    ElseIf M = 7 Then
+        If D >= 23 Then
+            SignIndex = 6
+        Else
+            SignIndex = 5
+        End If
+    ElseIf M = 8 Then
+        If D >= 23 Then
+            SignIndex = 7
+        Else
+            SignIndex = 6
+        End If
+    ElseIf M = 9 Then
+        If D >= 23 Then
+            SignIndex = 8
+        Else
+            SignIndex = 7
+        End If
+    ElseIf M = 10 Then
+        If D >= 24 Then
+            SignIndex = 9
+        Else
+            SignIndex = 8
+        End If
+    ElseIf M = 11 Then
+        If D >= 23 Then
+            SignIndex = 10
+        Else
+            SignIndex = 9
+        End If
+    ElseIf M = 12 Then
+        If D >= 22 Then
+            SignIndex = 11
+        Else
+            SignIndex = 10
+        End If
+    End If
+    
+    MsgBox (M & "月" & D & "日生まれの人の星座は" & ZodiacSigns(SignIndex) & "です")
+End Sub
+
+' 文字列の配列
+Sub MojiHairetsu()
+    Dim i As Integer
+    Dim a() As String
+    
+    i = InputBox("配列サイズの指定 ※インデックス0始まりに注意")
+    ReDim a(i) As String  'サイズiの配列を再定義
+    
+    ' ループで配列に値を入力
+    For i = LBound(a) To UBound(a)
+        a(i) = InputBox("任意の文字列を入力")
+    Next i '←配列の要素の値を任意で与える
+    
+    ' 配列の要素をスペース区切りで横一列に並べて表示
+    Dim k As String
+    k = "<配列aの要素一覧>" & vbCrLf
+    For i = LBound(a) To UBound(a)
+        k = k & a(i) & vbCrLf
+        MsgBox ("文字列:" & k & Len(a(i))) '文字列長さ
+    Next i
+End Sub
+'次の文字列にうつると前の文字列の長さの表示が消えてしまう
+
+' 文字列の配列(修正)
+Sub MojiHairetsu2()
+    Dim i As Integer
+    Dim a() As String
+    
+    i = InputBox("配列サイズの指定 ※インデックス0始まりに注意")
+    ReDim a(i) As String  'サイズiの配列を再定義
+    
+    ' ループで配列に値を入力
+    For i = LBound(a) To UBound(a)
+        a(i) = InputBox("任意の文字列を入力")
+    Next i '←配列の要素の値を任意で与える
+    
+    ' 配列の要素をスペース区切りで横一列に並べて表示
+    Dim k As String
+    k = "<配列aの要素一覧>" & vbCrLf
+    For i = LBound(a) To UBound(a)
+        k = k & a(i) & " (文字列長さ: " & Len(a(i)) & ")" & vbCrLf
+    Next i
+    MsgBox k
+End Sub
