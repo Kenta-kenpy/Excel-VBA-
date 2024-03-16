@@ -473,8 +473,16 @@ Sub Data_arrayMaxMinAve()
     Next i
     
     ' 平均値を求める
-    Dim ave As Double '小数だからDouble型
-    ave = WorksheetFunction.average(a)
+    Dim sum As Double '合計値を保持する変数
+    sum = 0
+    
+    For i = LBound(a) To UBound(a)
+        sum = sum + a(i) '配列の要素の合計を計算
+    Next i
+    
+    Dim ave As Double '平均値を保持する変数
+    ave = sum / (UBound(a) - LBound(a) + 1) '平均値を計算
+
     '出力桁数の指定
     Dim average As Double '小数だからDouble型
     average = Format(ave, "0.00") '小数点以下2桁まで表示
