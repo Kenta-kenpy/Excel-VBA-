@@ -914,15 +914,17 @@ Const MAX_ROW As Long = 100 '行　データの検索範囲ヨコ方向　下へ
 Sub Cell_Count()
     ' データが格納されたセルの末尾の列番号・行番号をお知らせ
     MsgBox ("データが格納されたセルの末尾の" & vbCrLf & "列番号・行番号をお知らせ") 'vbCrLfはメッセージボックスの改行
+    ' シート名
+    '変換したいシート名を入力
+    Dim csvSh As Worksheet
+    Dim S As String
+    S = InputBox("csvに変換したいシートの番号を指定")
+    Set csvSh = ThisWorkbook.Worksheets("Sheet" & S)
     
     ' ヨコ方向のセルについて　末尾データの列の場所を求める
     MsgBox ("※セルを右に向かって見ています")
     MsgBox ("行の使用済みセル最大列番号を求めます")
-    
-    ' シート名
-    Dim csvSh As Worksheet
-    Set csvSh = ThisWorkbook.Worksheets("Sheet14")
-       
+           
     ' 行ごとのどこまでの列を使っているかを格納する配列RowCountを初期化
     Dim RowCount() As Long
     ReDim RowCount(1 To MAX_ROW) As Long
@@ -1023,6 +1025,7 @@ Sub Cell_Count()
     '*** 書き込み工程 終了*** ◆◆◆
 
 End Sub
+
 '文章で解説
 '行ごとのデータの終端位置を格納する配列 RowCount() を初期化します。これにより、各行におけるデータの最終列が保持されます。
 '行ごとにデータの終端位置を取得し、その最大値を max_retu に代入します。これにより、データが入っているセルの使用する列番号の最大値が取得されます。
