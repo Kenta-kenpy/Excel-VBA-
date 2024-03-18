@@ -919,7 +919,7 @@ Sub Cell_Count()
     MsgBox ("※セルを右に向かって見ています")
     MsgBox ("行の使用済みセル最大列番号を求めます")
     
-    ' データのあるセル範囲取得
+    ' シート名
     Dim csvSh As Worksheet
     Set csvSh = ThisWorkbook.Worksheets("Sheet14")
        
