@@ -917,9 +917,8 @@ Sub Cell_Count()
     ' シート名
     '変換したいシート名を入力
     Dim csvSh As Worksheet
-    Dim S As String
-    S = InputBox("csvに変換したいシートの番号を指定")
-    Set csvSh = ThisWorkbook.Worksheets("Sheet" & S)
+    S = InputBox("このブックのcsvに変換したいシート名を指定")
+    Set csvSh = ThisWorkbook.Worksheets(S)
     
     ' ヨコ方向のセルについて　末尾データの列の場所を求める
     MsgBox ("※セルを右に向かって見ています")
