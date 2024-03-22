@@ -1,4 +1,3 @@
-'※20240322完成版
 '変数一覧
 'Const MAX_COL As Long 　定数　データの検索範囲タテ方向　列の数
 'Const MAX_ROW As Long   定数　データの検索範囲ヨコ方向　行の数
@@ -121,7 +120,7 @@ Sub Cell_Count()
     Dim outputFile As Variant
     'ファイル保存形式を選べるように
     outputFile = Application.Dialogs(xlDialogSaveAs).Show
-    'ファイル保存形式をCSV固定→エラー1004発生 アプリケーション定義またはオブジェクト定義のエラー
+    'ファイル保存形式をCSV固定→エラー1004発生 アプリケーション定義またはオブジェクト定義のエラー 保存できない
     'outputFile = Application.GetSaveAsFilename(FileFilter:="csvファイル,*.csv")
     '名前を付けて保存ダイアログボックス・・・これでファイル名とファイル形式両方を指定可
     If outputFile = False Then
