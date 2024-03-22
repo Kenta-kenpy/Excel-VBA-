@@ -1,0 +1,179 @@
+'※20240322完成版
+'変数一覧
+'Const MAX_COL As Long 　定数　データの検索範囲タテ方向　列の数
+'Const MAX_ROW As Long   定数　データの検索範囲ヨコ方向　行の数
+'csvSh 今回のワークシート
+'i 行のインデックス
+'RowCount()行ごとのどこまでの列を使っているかを格納する配列
+'lastCol 行を見たときに何列目までデータが入っているか
+'max_retu データが入っているセルの使用する列番号最大値
+'j 列のインデックス
+'ColCount()列ごとのどこまでの行を使っているかを格納する配列
+'lastRow 列を見たときに何行目までデータが入っているか
+'max_gyou データが入っているセルの使用する行番号最大値
+'outputFile csvファイルの保存先
+'csvVal i行j列のセルの値　csvSh.Cells(i, j).Value
+
+'定数
+Const MAX_COL As Long = 300  '列　データの検索範囲タテ方向　右へ
+Const MAX_ROW As Long = 300 '行　データの検索範囲ヨコ方向　下へ
+
+Sub Cell_Count()
+    ' データが格納されたセルの末尾の列番号・行番号をお知らせ
+    MsgBox ("データが格納されたセルの末尾の" & vbCrLf & "列番号・行番号をお知らせ") 'vbCrLfはメッセージボックスの改行
+    ' シート名
+    '変換したいシート名を入力
+    Dim csvSh As Worksheet
+    Dim S As Variant
+    S = Application.InputBox("このブックのcsvに変換したいシート名を指定")
+    ' 入力がなかった場合の処理
+    If S = "" Then
+        MsgBox ("シート名を入力してください")
+        Exit Sub  '抜ける
+    End If
+    '入力された場合かつシートが存在する場合の処理
+    MsgBox ("シート" & S & "が選ばれました")
+    ' ヨコ方向のセルについて　末尾データの列の場所を求める
+    'MsgBox ("※セルを右に向かって見ています")
+    MsgBox ("行の使用済みセル最大列番号を求めます")
+    'csvShに入力されたシート名Sをセット
+    Set csvSh = ThisWorkbook.Worksheets(S)
+           
+    ' 行ごとのどこまでの列を使っているかを格納する配列RowCountを初期化
+    Dim RowCount() As Long
+    ReDim RowCount(1 To MAX_ROW) As Long
+    
+    ' 行の数 i
+    Dim i As Long
+    For i = 1 To MAX_ROW
+        ' 各行の最終列を取得
+        Dim lastCol As Long
+        ' シートのセルを左に向かってみたときどのセルまで使われているか
+        lastCol = csvSh.Cells(i, csvSh.Columns.Count).End(xlToLeft).Column
+        ' 先頭行データが設定されているかいないか
+        If lastCol = 1 And IsEmpty(csvSh.Cells(i, 1).Value) Then
+            RowCount(i) = 0
+        Else
+            RowCount(i) = lastCol
+        End If
+    Next i
+    
+    ' データが入っているセルの使用する列番号最大値を求める
+    Dim max_retu As Long
+    '「各行の使用済みセル列の末尾列」のセルに格納されている値の配列
+    'step1 配列の先頭要素を最大値の初期値とする
+    max_retu = RowCount(1)
+    'step2 配列ループ
+    'For i = 0 To (UBound(dataCount) - LBound(dataCount)) '配列の最大インデックス-配列の最小インデックス+1　これで配列要素数が求まる
+    For i = LBound(RowCount) To UBound(RowCount)
+        'step3 要素大小比較
+        If RowCount(i) > max_retu Then
+            'step4 配列の隣接2要素について　左の要素が右の要素より大きければ入れ替えて最大値に代入
+            max_retu = RowCount(i)
+        End If
+    Next i
+    MsgBox ("データが入っているセルの使用する列番号最大値は" & vbCrLf & max_retu & " です")  'vbCrLfはメッセージボックスの改行
+    
+    '--------------------------------------------------------------------------------
+    ' タテ方向のセルについて　末尾データの行の場所を求める
+    MsgBox ("つづきまして　列の使用済みセル最大行番号を求めます")
+    'MsgBox ("※セルを下に向かって見ています")
+    
+    ' 列ごとのどこまでの行を使っているかを格納する配列ColCountを初期化
+    Dim ColCount() As Long
+    ReDim ColCount(1 To MAX_COL) As Long
+    
+    ' 列の数 j
+    Dim j As Long
+    For j = 1 To MAX_COL
+        ' 各列の最終行を取得
+        Dim lastRow As Long
+        ' シートのセルを上に向かってみたときどのセルまで使われているか
+        lastRow = csvSh.Cells(csvSh.Rows.Count, j).End(xlUp).Row
+        ' 先頭列データが設定されているかいないか
+        If lastRow = 1 And IsEmpty(csvSh.Cells(1, j).Value) Then
+            ColCount(j) = 0
+        Else
+            ColCount(j) = lastRow
+        End If
+    Next j
+    
+    ' データが入っているセルの使用する行番号最大値を求める
+    Dim max_gyou As Long
+    '「各列の使用済みセル行の末尾行」のセルに格納されている値の配列
+    'step1 配列の先頭要素を最大値の初期値とする
+    max_gyou = ColCount(1)
+    'step2 配列ループ
+    'For j = 0 To (UBound(dataCount) - LBound(dataCount)) '配列の最大インデックス-配列の最小インデックス+1　これで配列要素数が求まる
+    For j = LBound(ColCount) To UBound(ColCount)
+        'step3 要素大小比較
+        If ColCount(j) > max_gyou Then
+            'step4 配列の隣接2要素について　左の要素が右の要素より大きければ入れ替えて最大値に代入
+            max_gyou = ColCount(j)
+        End If
+    Next j
+    MsgBox ("データが入っているセルの使用する行番号最大値は" & vbCrLf & max_gyou & " です") 'vbCrLfはメッセージボックスの改行
+    
+    '--------------------------------------------------------------------------------
+    MsgBox ("シートCSV変換を開始します")
+    
+    ' CSVファイルの保存先を指定
+    Dim outputFile As Variant
+    'ファイル保存形式を選べるように
+    outputFile = Application.Dialogs(xlDialogSaveAs).Show
+    'ファイル保存形式をCSV固定→エラー1004発生 アプリケーション定義またはオブジェクト定義のエラー
+    'outputFile = Application.GetSaveAsFilename(FileFilter:="csvファイル,*.csv")
+    '名前を付けて保存ダイアログボックス・・・これでファイル名とファイル形式両方を指定可
+    If outputFile = False Then
+        Exit Sub
+    End If
+    ActiveWorkbook.SaveAs Filename
+ 
+    ' 空ファイル番号を取得
+    Dim csvNum As Long
+    csvNum = FreeFile
+    
+    ' CSVファイルを書き込みモードで開く
+    Open outputFile For Output As #csvNum
+    
+    ' 行方向要素数分ループ ' 行ごとのどこまでの列を使っているか
+    For i = 1 To max_gyou
+        ' 列方向要素数分ループ ' 列ごとのどこまでの行を使っているか
+        '1行目のときは行ごと列の末尾配列の1番目の要素、2行目のときは2番目の要素を取り出したい
+        For j = 1 To RowCount(i)
+            'セル座標のデータをcsvValとして取得
+            Dim csvVal As String
+            ' セルの値を定義
+            csvVal = csvSh.Cells(i, j).Value
+            ' セルが空でない場合に値を書き込む
+            If j = RowCount(i) Then
+                ' 最終列の場合、デフォルトで改行コードが付与
+                Print #csvNum, csvVal
+            Else
+                ' 最終列でない場合、コンマ刻みで末尾にセミコロン付与
+                Print #csvNum, csvVal & ",";
+            End If
+        Next j
+        
+        '********** 空行の挿入
+        ' 1)現在の行が最後の行でない、2)次の行にデータがない場合にのみ空白行を挿入
+        '今の行番号がデータが入っているセルの使用する行番号最大値より小さい間
+        'If i < max_gyou Then
+            'シートの次の行の空白以外のセルの個数（countA関数）が0・・・つまり全部空セルの行
+            '※CountAではスペースも数えてしまうので注意すべし
+            If WorksheetFunction.CountA(csvSh.Rows(i)) = 0 Then
+                'ファイル出力　csvValの代わりに空白出力
+                Print #csvNum, ""
+            End If
+        'End If
+        '**********
+    Next i
+    
+    ' ファイルを閉じる
+    Close #csvNum
+    
+    MsgBox ("シートCSV変換 出力完了しました")
+    '*** 書き込み工程 終了*** ◆◆◆
+    '--------------------------------------------------------------------------------
+
+    End Sub
