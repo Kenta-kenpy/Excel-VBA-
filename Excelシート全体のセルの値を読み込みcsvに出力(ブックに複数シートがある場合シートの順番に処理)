@@ -1,0 +1,231 @@
+'任意のシート名を入力してCSVにする方法→ブック内の全シートをCSVにする方法を考える(シートを1枚づつ順番に出力)
+
+'マクロの概要
+'0.1048576行,16384列までシートの最終行と最終列のデータを読み込むように修正
+'1.ExcelSheet上のセルのうち入力されたデータがある使用済みセルの最大行数と最大列数を求める
+'2.1の処理ののちシート全体をCSV形式で出力する
+'→「名前を付けて保存ダイアログ」を用いてCSV形式で保存する
+'3.保存完了メッセージに保存先ディレクトリを表示
+
+'出力の仕方の注意
+'1.シート上の全てのデータが出力されること 漏れがないこと
+'2.データのない行について空行として出力しカンマも表示しない
+'3.空行を上に詰めない
+'4.行の中でデータとデータの間の空白セルについては区切りカンマで表す
+'5.行ごとの行末データ以降は「最大のデータ数の行の列数ぶん」のカンマを表示しない
+'6.行および列の番号最大値を求める際にWorkSheet関数を使わない方法を使う
+
+'変数一覧
+'csvSh 今回のワークシート
+'i 行のインデックス
+'RowCount()行ごとのどこまでの列を使っているかを格納する配列
+'lastCol 行を見たときに何列目までデータが入っているか
+'max_retu データが入っているセルの使用する列番号最大値
+'j 列のインデックス
+'ColCount()列ごとのどこまでの行を使っているかを格納する配列
+'lastRow 列を見たときに何行目までデータが入っているか
+'max_gyou データが入っているセルの使用する行番号最大値
+'outputFile csvファイルの保存先
+'FreeFile ファイル出力においてOSでファイルを一元管理するための仕組み　ファイル番号が他と重複しないように空ファイル番号を自動取得
+'csvVal 今回のワークシートのi行j列のセルの値　csvSh.Cells(i, j).Value
+
+'定数 CSVに出力する上でのデータ検索範囲 シート全体の範囲
+Const MAX_COL As Long = 16384  '16384列数 最大XFDまで　データの検索範囲タテ方向　右へ
+Const MAX_ROW As Long = 1048576  '1048576行   最大1048576まで　データの検索範囲ヨコ方向　下へ
+
+Sub Cell_Count()
+'★　Step1　シートの指定
+'----- ワークシートの全シートを変換対象とする
+    ' データが格納されたセルの末尾の列番号・行番号をお知らせ
+    MsgBox ("データ格納セルの" & vbCrLf & "最大の列・行の番号をお知らせ") 'vbCrLfはメッセージボックスの改行
+    'ブック内の全シートをCSVにする
+    Dim csvSh As Worksheet 'シートのオブジェクト
+    Dim sheetCount As Integer
+    sheetCount = 0
+    For Each csvSh In ThisWorkbook.Worksheets  'ワークシートの何枚目の処理か
+       ' 処理中のシート番号を表示
+        sheetCount = sheetCount + 1
+            MsgBox (sheetCount & "枚目/" & ThisWorkbook.Worksheets.Count & "枚中 のシートを処理中です")
+'--------------------------------------------------------------------------------
+'★　Step2　行の使用済みセルの最大列番号を求める
+'----- シートのセルを横方向に見た場合　使用済みセルの最大列番号を求める
+    ' ヨコ方向のセルについて　末尾データの列の場所を求める
+    'MsgBox ("※セルを右に向かって見ています")
+    MsgBox ("行の使用済みセル最大列番号を求めます")
+'★　Step2-1　行の使用済みセルの配列の設定
+'----- 行に関して使用済みセルの最大列番号を格納する配列
+    ' 行ごとのどこまでの列を使っているかを格納する配列RowCountを初期化
+    Dim RowCount() As Long
+    ReDim RowCount(1 To MAX_ROW) As Long
+'----- 行の先頭列セルにデータがないときの行の使用済みデータ数に関する処理
+    ' 行の数 i
+    Dim i As Long
+    
+    For i = 1 To MAX_ROW
+        ' 各行の最終列を取得
+        Dim lastCol As Long
+        ' シートのセルをXFD列から左に向かってみたときどのセルまで使われているか(←)
+        lastCol = csvSh.Cells(i, csvSh.Columns.Count).End(xlToLeft).Column
+        ' 行の先頭列データが設定されているかいないか・・・行を見たときに1列目にデータがあるのか
+        If lastCol = 1 And IsEmpty(csvSh.Cells(i, 1).Value) Then  '行の先頭列データがない
+            RowCount(i) = 0 '最終列番号は0
+        Else  '行の先頭列データがある
+            RowCount(i) = lastCol '最終列番号はもっとも右のセルの要素
+        End If
+'----- 行の最終列セルにデータがないときの行の使用済みデータ数に関する処理
+        '最終列データがあるかないか XFD(16384)列
+        If Not IsEmpty(csvSh.Cells(i, 16384).Value) Then  '最終列が空ではない　Notで空であるを否定
+            RowCount(i) = 16384 '最終列番号を16384とする
+        End If
+    Next i
+'★　Step2-2　行の使用済みセルの配列から最大列番号を求める
+'----- 使用済みセルの列番号最大値を求める
+'----- A～XFC列までの範囲↓
+'-----「各行の使用済みセル列の末尾列」のセルに格納されている値の配列の要素最大値を求める
+    Dim max_retu As Long
+    '「各行の使用済みセル列の末尾列」のセルに格納されている値の配列
+    'step1 配列の先頭要素を最大値の初期値とする
+    max_retu = RowCount(1)
+    'step2 配列全体をループ
+    For i = LBound(RowCount) To UBound(RowCount)
+        'step3 要素大小比較
+        If RowCount(i) > max_retu Then
+            'step4 配列の各要素について　ある要素が先頭要素より大きければ入れ替えて最大値に代入
+            max_retu = RowCount(i)
+        End If
+    Next i
+        
+    MsgBox ("データが入っているセルの使用する列番号最大値は" & vbCrLf & max_retu & " です")  'vbCrLfはメッセージボックスの改行
+    
+    '--------------------------------------------------------------------------------
+'★　Step3　列の使用済みセルの最大行番号を求める
+'----- シートのセルを縦方向に見た場合　使用済みセルの最大行番号を求める
+    ' タテ方向のセルについて　末尾データの行の場所を求める
+    MsgBox ("つづいて　列の使用済みセル最大行番号を求めます")
+    'MsgBox ("※セルを下に向かって見ています")
+'★　Step3-1　列の使用済みセルの配列の設定
+'----- 列に関して使用済みセルの最大行番号を格納する配列
+    ' 列ごとのどこまでの行を使っているかを格納する配列ColCountを初期化
+    Dim ColCount() As Long
+    ReDim ColCount(1 To MAX_COL) As Long
+'----- 列の先頭行セルにデータがないときの列の使用済みデータ数に関する処理
+    ' 列の数 j
+    Dim j As Long
+    
+    For j = 1 To MAX_COL
+        ' 各列の最終行を取得
+        Dim lastRow As Long
+        ' シートのセルを1048576行から上に向かってみたときどのセルまで使われているか(↑)
+        lastRow = csvSh.Cells(csvSh.Rows.Count, j).End(xlUp).Row
+        ' 列の先頭行データが設定されているかいないか・・・列を見たときに1行目にデータがあるのか
+        If lastRow = 1 And IsEmpty(csvSh.Cells(1, j).Value) Then  '列の先頭行データがない
+            ColCount(j) = 0 '最終行番号は0
+        Else   '列の先頭行データがある
+            ColCount(j) = lastRow '最終行番号はもっとも下のセルの要素
+        End If
+'----- 列の最終行セルにデータがないときの行の使用済みデータ数に関する処理
+        '最終行データがあるかないか 1048576行
+        If Not IsEmpty(csvSh.Cells(1048576, j)) Then '最終行が空ではない　Notで空であるを否定
+            ColCount(j) = 1048576 '最終行番号を1048576とする
+        End If
+    Next j
+'★　Step3-2　列の使用済みセルの配列から最大行番号を求める
+'----- 使用済みセルの行番号最大値を求める
+'----- 1～1048575行までの範囲↓
+'-----「各列の使用済みセル行の末尾列」のセルに格納されている値の配列の要素最大値を求める
+    Dim max_gyou As Long
+    '「各列の使用済みセル行の末尾行」のセルに格納されている値の配列
+    'step1 配列の先頭要素を最大値の初期値とする
+    max_gyou = ColCount(1)
+    'step2 配列全体をループ
+    For j = LBound(ColCount) To UBound(ColCount)
+        'step3 要素大小比較
+        If ColCount(j) > max_gyou Then
+            'step4 配列の各要素について　ある要素が先頭要素より大きければ入れ替えて最大値に代入
+            max_gyou = ColCount(j)
+        End If
+    Next j
+        
+    MsgBox ("データが入っているセルの使用する行番号最大値は" & vbCrLf & max_gyou & " です") 'vbCrLfはメッセージボックスの改行
+    
+    '--------------------------------------------------------------------------------
+'★　Step4　シートをファイル出力
+'----- 使用済みセルの列番号最大値と行番号最大値が求まったのでシートをCSV形式で出力する
+    MsgBox ("シートのCSV出力を開始します")
+'★　Step4-1　名前を付けて保存ダイアログボックス
+'----- 出力するファイルを名前を付けて保存で「csv形式」で保存するためのダイアログボックス
+    ' CSVファイルの保存先を指定
+    Dim outputFile As String
+    '名前を付けて保存ダイアログボックス
+    'ファイル名、保存フォルダ、ファイル保存形式を選べるように
+    'outputFile = Application.Dialogs(xlDialogSaveAs).Show
+    outputFile = Application.GetSaveAsFilename(FileFilter:="csvファイル,*.csv")  'csv形式で保存するため拡張子固定
+    '名前を付けて保存で保存を押した場合
+    If outputFile <> "" Then '出力ファイルが指定された場合
+        MsgBox ("ファイルが保存されました")
+    Else 'これがない場合キャンセル時に実行時エラーが発生
+        'キャンセルボタンが押された場合の処理
+        MsgBox ("保存がキャンセルされました")
+        Exit Sub '抜ける
+    End If
+'★　Step4-2　空のファイル番号取得
+'----- ファイル出力においてOSでファイルを一元管理するための仕組み　ファイルを扱う際にファイル番号が他と重複しないようにFreeFile関数を使うことで未使用番号(空ファイル番号)を自動で取得する
+    ' 空ファイル番号を取得
+    Dim csvNum As Long
+    csvNum = FreeFile
+'★　Step4-3　ファイルへの書き込み処理
+'★　Step4-3-1　データのある行について
+    '*** 書き込み工程 開始*** ◆◆◆
+'----- 上述のcsvファイルをファイル番号csvNumとして開く
+    ' CSVファイルを書き込みして開く
+    Open outputFile For Output As #csvNum
+'----- セルの座標データを取得しファイルに書き込み
+    ' 行方向要素数分ループ ' 行ごとのどこまでの列を使っているか
+    For i = 1 To max_gyou
+        ' 列方向要素数分ループ ' 列ごとのどこまでの行を使っているか
+        '1行目のときは行ごとの列末尾配列RowCountの1番目の要素、2行目のときは2番目の要素を取り出す
+        For j = 1 To RowCount(i)
+            'セル座標のデータをcsvValとして取得
+            Dim csvVal As String
+            ' セル座標の値csvValを定義
+            csvVal = csvSh.Cells(i, j).Value
+            If j = RowCount(i) Then
+                ' 最終列の場合、データを出力した後に自動的に改行を挿入する
+                Print #csvNum, csvVal
+            Else
+                ' 最終列でない場合、コンマ刻みで値を出力する
+                Print #csvNum, csvVal & ",";
+            End If
+        Next j
+'★　Step4-3-2　データのない行について
+'----- データのない行について空行として出力しカンマも表示しない について
+        '********** 空行の挿入
+        ' 1)現在の行が最後の行でない かつ2)次の行にデータがない場合にのみ空行を挿入
+        '今の行番号がデータが入っているセルの使用する行番号最大値より小さい間
+            'シートのある行の空白以外のセルの個数（countA関数）が0・・・行のセルすべてが空セル
+            If WorksheetFunction.CountA(csvSh.Rows(i)) = 0 Then
+                'ファイル出力　ほかの行のように値csvValを出力せずに空白を出力
+                Print #csvNum, ""
+            End If
+        '**********
+    Next i
+    
+    ' CSVファイルを閉じる
+    Close #csvNum
+    '*** 書き込み工程 終了*** ◆◆◆
+    
+'★　Step5　保存先をダイアログでお知らせ(出力完了メッセージと保存先パスをメッセージ表示)
+'----- 保存先フォルダをお知らせ どこに保存したかを教えてくれる
+    Dim filePath As String
+    filePath = outputFile 'ファイルパスは出力するファイルのもの
+    Dim FolderPath As String
+    Dim k As Integer
+    k = InStrRev(filePath, "\") 'InStrRev関数は、指定文字"\"を文字列filePathの後ろから先頭に向けて検索し見つかった位置を返す。
+    FolderPath = Left(filePath, k - 1) 'ファイルのフルパスの内、InStrRev関数で見つかった\の位置から1文字前までの文字列を取得
+'----- 指定シートがcsvファイルとして出力された 保存先フォルダも教えてくれる
+    MsgBox ("シートcsv変換 出力完了しました" & vbCrLf & FolderPath) 'メッセージボックスに変数「FolderPath」に入っている文字列を表示　vbCrLfはメッセージボックスの改行
+    '保存したフォルダを開く
+    CreateObject("WScript.Shell").Run FolderPath
+        Next csvSh  'For Each文のループのカウンタのインクリメント
+    MsgBox ("全シートの出力が完了")
+End Sub
