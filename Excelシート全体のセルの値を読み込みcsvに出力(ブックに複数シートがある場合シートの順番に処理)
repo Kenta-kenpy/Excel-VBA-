@@ -17,6 +17,7 @@
 
 '変数一覧
 'csvSh 今回のワークシート
+'sheetCount 今処理している「ブックに含まれるワークシート」の番号
 'i 行のインデックス
 'RowCount()行ごとのどこまでの列を使っているかを格納する配列
 'lastCol 行を見たときに何列目までデータが入っているか
@@ -40,10 +41,9 @@ Sub Cell_Count()
     MsgBox ("データ格納セルの" & vbCrLf & "最大の列・行の番号をお知らせ") 'vbCrLfはメッセージボックスの改行
     'ブック内の全シートをCSVにする
     Dim csvSh As Worksheet 'シートのオブジェクト
-    Dim sheetCount As Integer
+    Dim sheetCount As Integer  'ワークシートの何枚目の処理か
     sheetCount = 0
-    For Each csvSh In ThisWorkbook.Worksheets  'ワークシートの何枚目の処理か
-       ' 処理中のシート番号を表示
+    For Each csvSh In ThisWorkbook.Worksheets
         sheetCount = sheetCount + 1
             MsgBox (sheetCount & "枚目/" & ThisWorkbook.Worksheets.Count & "枚中 のシートを処理中です")
 '--------------------------------------------------------------------------------
