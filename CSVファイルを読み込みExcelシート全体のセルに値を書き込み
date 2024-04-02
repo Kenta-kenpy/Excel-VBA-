@@ -1,0 +1,184 @@
+※取り込み先として入力したシートがない場合に非対応
+'目的：すでに存在する出力済みCSVファイルの内容を書き出し、ダイアログに沿って操作を行う。操作によって、ブックのシートに指定したCSVファイルの内容が書き込まれる。
+'※できているけれど、InputOutputを使ったりする形式で作り直す。
+
+'変数一覧
+'csvSh 今回のワークシート
+'sheetCount 今処理している「ブックに含まれるワークシート」の番号
+'i 行のインデックス
+'RowCount()行ごとのどこまでの列を使っているかを格納する配列
+'lastCol 行を見たときに何列目までデータが入っているか
+'max_retu データが入っているセルの使用する列番号最大値
+'j 列のインデックス
+'ColCount()列ごとのどこまでの行を使っているかを格納する配列
+'lastRow 列を見たときに何行目までデータが入っているか
+'max_gyou データが入っているセルの使用する行番号最大値
+'outputFile csvファイルの保存先
+'FreeFile ファイル出力においてOSでファイルを一元管理するための仕組み　ファイル番号が他と重複しないように空ファイル番号を自動取得
+'csvVal 今回のワークシートのi行j列のセルの値　csvSh.Cells(i, j).Value
+
+'定数 CSVに出力する上でのデータ検索範囲 シート全体の範囲
+Const MAX_COL As Long = 16384  '16384列数 最大XFDまで　データの検索範囲タテ方向　右へ
+Const MAX_ROW As Long = 1048576  '1048576行   最大1048576まで　データの検索範囲ヨコ方向　下へ
+
+Sub CSV_Input()
+'https://officedic.com/excel-vba-fileopen-dialogbox/#toc1
+'→複数のファイルを選択可能にする
+'https://excel-vba.work/2021/01/03/%E3%80%90vba%E3%80%91csv%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%82%92%E3%82%B7%E3%83%BC%E3%83%88%E3%81%B8%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%82%80/
+'https://workteria.forward-soft.co.jp/blog/detail/10440
+'https://excel-ubara.com/excelvba5/EXCEL111.html
+'https://www.tipsfound.com/vba/18014-vba#:~:text=VBA%20CSV%20%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%20%28QueryTables.Add%20%E9%96%A2%E6%95%B0%E3%82%92%E4%BD%BF%E3%81%86%29%201%20%E3%81%AF%E3%81%98%E3%82%81%E3%81%AB%20Excel,Workbooks.OpenText%20%E9%96%A2%E6%95%B0%E3%81%8C%E3%81%82%E3%82%8A%E3%81%BE%E3%81%99%E3%80%82%20%E4%BA%8C%E3%81%A4%E3%81%AE%E7%89%B9%E5%BE%B4%E3%81%AE%E9%81%95%E3%81%84%E3%82%92%E7%B4%B9%E4%BB%8B%E3%81%97%E3%81%BE%E3%81%99%E3%80%82%20...%203%20%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E8%AA%AD%E3%81%BF%E8%BE%BC%E3%81%BF%20%E3%82%B3%E3%83%94%E3%83%BC%20
+'https://vba-nav.com/excelvba/macrocsv/
+
+'〇　大きな流れ
+'★  Step1　読み込み元のCSVファイルを選択
+'----- 参照先フォルダと参照CSVファイルを選択する
+    MsgBox ("CSVファイルを読み込んで" & vbCrLf & "Excelブックのシートにファイル内容を書き込み") ' vbCrLfはメッセージボックスの改行
+    MsgBox ("読み込むCSVファイルを指定")
+    'カレントフォルダの指定(ファイル検索を行うタイミングで開始時に表示するフォルダ)
+    With CreateObject("WScript.Shell")
+        .CurrentDirectory = "C:\Users\swp\Desktop"
+    End With
+    ' 参照するCSVファイル
+    Dim inputFile As Variant
+    inputFile = Application.GetOpenFilename(FileFilter:="csvファイル,*.csv") 'csv形式を取り込むため拡張子固定
+    If inputFile = False Then
+        Exit Sub  '抜ける
+    End If
+    'If IsArray(inputFile) Then
+    Workbooks.Open inputFile(1) '最初に選択したCSVファイルを開く
+    'End If
+    MsgBox ("読み込むCSVファイルが指定されました")
+    '変数inputFileに読み込みたいCSVのデータがセットされている
+    
+'★　Step2  データの取り込み
+'----- 取り込み先のワークシートの指定
+    Dim csvSh As Worksheet
+    Dim S As Variant
+        S = InputBox("このブックのどのシートに" & vbCrLf & "csvを取り込んで書き出しますか") ' vbCrLfはメッセージボックスの改行
+            ' キャンセルした場合 または どのシートに書き出すか未指定でOKを選択した場合
+            '書き出し先が決まっていないとき
+            If S = "" Then
+                MsgBox ("取り込み先シートの選択がキャンセルされました。" & vbCrLf & "またはシートを指定していません。" & vbCrLf & "処理を終了します。")
+                Exit Sub  '抜ける
+            End If
+        '取り込み先として入力したシートがある場合
+        MsgBox ("指定したシートに取り込みを開始します")
+        Set csvSh = ThisWorkbook.Sheets(S)
+        '取り込み先として入力したシートがない場合 ※この条件分岐を考える！！！！
+        
+        
+
+
+    '取り込み先のシートを表示したとき
+    ThisWorkbook.Sheets(S).Activate
+    Application.Goto Range("A1"), True '取り込み先のシートA1セルにカーソルが合っている状態 起点セル
+
+''★　Step3　CSVからのデータ書き込み範囲の指定
+''※　Step3・・・CSV出力からの引用
+''Step3-1　行に書き込むセル範囲の最大列番号を求める
+''Step3-1-1　行の使用済みセルの配列の設定
+''----- 行に関して使用済みセルの最大列番号を格納する配列
+'    ' 行ごとのどこまでの列を使っているかを格納する配列RowCountを初期化
+'    Dim RowCount() As Long
+'    ReDim RowCount(1 To MAX_ROW) As Long
+''----- 行の先頭列セルにデータがないときの行の使用済みデータ数に関する処理
+'    ' 行の数 i
+'    Dim i As Long
+'
+'    For i = 1 To MAX_ROW
+'        ' 各行の最終列を取得
+'        Dim lastCol As Long
+'        ' シートのセルをXFD列から左に向かってみたときどのセルまで使われているか(←)
+'        lastCol = csvSh.Cells(i, csvSh.Columns.Count).End(xlToLeft).Column
+'        ' 行の先頭列データが設定されているかいないか・・・行を見たときに1列目にデータがあるのか
+'        If lastCol = 1 And IsEmpty(csvSh.Cells(i, 1).Value) Then  '行の先頭列データがない
+'            RowCount(i) = 0 '最終列番号は0
+'        Else  '行の先頭列データがある
+'            RowCount(i) = lastCol '最終列番号はもっとも右のセルの要素
+'        End If
+''----- 行の最終列セルにデータがないときの行の使用済みデータ数に関する処理
+'        '最終列データがあるかないか XFD(16384)列
+'        If Not IsEmpty(csvSh.Cells(i, 16384).Value) Then  '最終列が空ではない　Notで空であるを否定
+'            RowCount(i) = 16384 '最終列番号を16384とする
+'        End If
+'    Next i
+''Step3-1-2　行の使用済みセルの配列から最大列番号を求める
+''----- 使用済みセルの列番号最大値を求める
+''----- A～XFC列までの範囲↓
+''-----「各行の使用済みセル列の末尾列」のセルに格納されている値の配列の要素最大値を求める
+'    Dim max_retu As Long
+'    '「各行の使用済みセル列の末尾列」のセルに格納されている値の配列
+'    'step1 配列の先頭要素を最大値の初期値とする
+'    max_retu = RowCount(1)
+'    'step2 配列全体をループ
+'    For i = LBound(RowCount) To UBound(RowCount)
+'        'step3 要素大小比較
+'        If RowCount(i) > max_retu Then
+'            'step4 配列の各要素について　ある要素が先頭要素より大きければ入れ替えて最大値に代入
+'            max_retu = RowCount(i)
+'        End If
+'    Next i
+''Step3-2　列に書き込むセル範囲の最大行番号を求める
+''Step3-2-1　列の使用済みセルの配列の設定
+''----- 列に関して使用済みセルの最大行番号を格納する配列
+'    ' 列ごとのどこまでの行を使っているかを格納する配列ColCountを初期化
+'    Dim ColCount() As Long
+'    ReDim ColCount(1 To MAX_COL) As Long
+''----- 列の先頭行セルにデータがないときの列の使用済みデータ数に関する処理
+'    ' 列の数 j
+'    Dim j As Long
+'
+'    For j = 1 To MAX_COL
+'        ' 各列の最終行を取得
+'        Dim lastRow As Long
+'        ' シートのセルを1048576行から上に向かってみたときどのセルまで使われているか(↑)
+'        lastRow = csvSh.Cells(csvSh.Rows.Count, j).End(xlUp).Row
+'        ' 列の先頭行データが設定されているかいないか・・・列を見たときに1行目にデータがあるのか
+'        If lastRow = 1 And IsEmpty(csvSh.Cells(1, j).Value) Then  '列の先頭行データがない
+'            ColCount(j) = 0 '最終行番号は0
+'        Else   '列の先頭行データがある
+'            ColCount(j) = lastRow '最終行番号はもっとも下のセルの要素
+'        End If
+''----- 列の最終行セルにデータがないときの行の使用済みデータ数に関する処理
+'        '最終行データがあるかないか 1048576行
+'        If Not IsEmpty(csvSh.Cells(1048576, j)) Then '最終行が空ではない　Notで空であるを否定
+'            ColCount(j) = 1048576 '最終行番号を1048576とする
+'        End If
+'    Next j
+''Step3-2-2　列の使用済みセルの配列から最大行番号を求める
+''----- 使用済みセルの行番号最大値を求める
+''----- 1～1048575行までの範囲↓
+''-----「各列の使用済みセル行の末尾列」のセルに格納されている値の配列の要素最大値を求める
+'    Dim max_gyou As Long
+'    '「各列の使用済みセル行の末尾行」のセルに格納されている値の配列
+'    'step1 配列の先頭要素を最大値の初期値とする
+'    max_gyou = ColCount(1)
+'    'step2 配列全体をループ
+'    For j = LBound(ColCount) To UBound(ColCount)
+'        'step3 要素大小比較
+'        If ColCount(j) > max_gyou Then
+'            'step4 配列の各要素について　ある要素が先頭要素より大きければ入れ替えて最大値に代入
+'            max_gyou = ColCount(j)
+'        End If
+'    Next j
+        
+'★　Step4　CSVからのデータ書き出し
+'QueryTables.Add 関数
+'※既存のシートにデータを挿入します。
+'Excel の「外部データの取り込み」から表示される「テキストファイルウィザード」と同じ機能
+'Workbooks.OpenText 関数
+'※必ず新しいWorkbookを作成する
+     With csvSh.QueryTables.Add(Connection:="TEXT;" & inputFile, Destination:=csvSh.Cells(1, 1))
+        '区切り文字に「カンマ区切り」を指定
+        .TextFileCommaDelimiter = True
+        '文字コードに「UTF-8」を指定
+        .TextFilePlatform = 65001
+        '読み込み開始行を指定
+        .TextFileStartRow = 1
+        .Refresh
+    End With
+MsgBox ("CSV取り込み完了")
+    
+End Sub
+
