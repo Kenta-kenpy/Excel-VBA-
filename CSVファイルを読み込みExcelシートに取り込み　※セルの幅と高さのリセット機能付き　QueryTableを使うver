@@ -1,0 +1,96 @@
+Sub CSV_Reading()
+
+'★  Step1　読み込み元のCSVファイルを選択
+MsgBox ("読み込むCSVファイルを指定")
+'カレントフォルダの指定(ファイル検索を行うタイミングで開始時に表示するフォルダ)
+With CreateObject("WScript.Shell")
+    .CurrentDirectory = "C:\Users\swp\Desktop"
+End With
+' 参照するCSVファイル
+Dim inputFile As Variant
+inputFile = Application.GetOpenFilename(FileFilter:="csvファイル,*.csv")
+Dim csvSh As Worksheet
+MsgBox ("読み込むCSVファイルが指定されました")
+Dim S As Variant
+    S = InputBox("このブックのどのシートに" & vbCrLf & "csvを取り込んで書き出しますか")
+'取り込み先のシートが存在しない場合
+'全シートでループ
+' 取り込み先として入力したシートがない場合
+        Dim sheetExists As Boolean
+         ' シートが存在するかどうかを確認します
+        sheetExists = False
+        For Each csvSh In ThisWorkbook.Sheets
+            If csvSh.Name = S Then
+                sheetExists = True
+                Exit For
+            End If
+        Next csvSh
+        If Not sheetExists Then
+            MsgBox ("取り込み先のシートが作成されていません")
+                Exit Sub
+        End If
+        Set csvSh = ThisWorkbook.Worksheets(S)
+    
+'★  Step2　CSVからのデータ書き出し
+'★CSVからのデータ書き出し
+'QueryTables.Add 関数
+'※既存のシートにデータを挿入します。
+'Excel の「外部データの取り込み」から表示される「テキストファイルウィザード」と同じ機能
+     With csvSh.QueryTables.Add(Connection:="TEXT;" & inputFile, Destination:=csvSh.Cells(1, 1))
+        '区切り文字に「カンマ区切り」を指定
+        .TextFileCommaDelimiter = True
+        '文字コードに「UTF-8」を指定
+        .TextFilePlatform = 65001
+        '読み込み開始行を指定
+        .TextFileStartRow = 1
+        '↓.Refreshメソッドを完全に削除し、データを読み込む際に何も更新しないようにします。
+        .Refresh BackgroundQuery:=False 'XFD列にデータがあると列挿入はできない .Refleshだとそうなる　※原因　.Refreshメソッドの代わりに、.Refresh BackgroundQuery:=Falseを使用してみてください。これにより、クエリがバックグラウンドで実行されず、Excelが処理を待機することが防がれます。
+    End With
+
+MsgBox ("CSV読み込み完了")
+'   読み込んだら取り込み先のシートを表示する
+ThisWorkbook.Sheets(S).Activate
+Application.Goto range("A1"), True '取り込み先のシートA1セルにカーソルが合っている状態 起点セル
+
+End Sub
+
+<全体の解説>
+QueryTableを使用してCSVファイルからデータを読み込み、ワークシートに挿入する方法を示しています。
+Step1 - CSVファイルの選択:
+最初に、ユーザーにCSVファイルを選択するよう促すメッセージボックスが表示されます。
+
+シートの選択:
+次に、ユーザーにデータを取り込むワークシートを選択するように要求されます。
+
+ワークシートの存在確認:
+指定されたワークシートが存在するかどうかを確認します。もし存在しない場合は、メッセージボックスが表示されて処理が終了します。
+
+Step2 - CSVからのデータ書き出し:
+QueryTables.Addメソッドを使用して、指定されたCSVファイルからデータを読み込みます。
+Connectionパラメータには、読み込むファイルのパスが含まれます。Destinationパラメータには、データを挿入するセルの位置が指定されます。
+.TextFileCommaDelimiter = Trueは、カンマを区切り文字として使用することを指定します。
+.TextFilePlatform = 65001は、UTF-8の文字コードを使用することを指定します。
+.TextFileStartRow = 1は、最初の行からデータを読み込むことを指定します。
+.Refresh BackgroundQuery:=Falseは、データを読み込む際にクエリを更新しないことを指定します。
+
+完了メッセージ:
+データの読み込みが完了したことを通知するメッセージボックスが表示されます。
+
+ワークシートの表示:
+データを取り込んだワークシートがアクティブになり、セルA1にカーソルが配置されます。
+この方法では、QueryTableを使用してデータを効率的に読み込むことができます。 
+QueryTableを使うことで、独自のデータ変換や処理を書かずに、簡単かつ効率的に外部データをExcelに取り込むことができます。
+
+<QueryTableを使わない方法との違い>
+データの読み込み方法:
+先ほどのコードでは、CSVファイルから1行ずつデータを読み込んで、各行を処理してワークシートに書き込んでいました。
+一方、QueryTableを使用したコードでは、QueryTables.Addメソッドを使用して、CSVファイル全体を一度に読み込んでワークシートに挿入しています。
+データの処理:
+先ほどのコードでは、CSVファイルから1行ずつデータを読み込み、配列に格納してからワークシートに書き込む処理を繰り返していました。
+QueryTableを使用したコードでは、QueryTableが自動的にCSVファイルのデータをワークシートに挿入するため、明示的なデータ処理のループが不要です。
+処理速度と効率性:
+QueryTableを使用したコードの方が、大容量のデータを効率的に取り込むことができます。QueryTableは内部的に最適化されており、データの取り込みや処理を高速化するための機能が組み込まれています。
+一方、先ほどのコードでは、ループ処理を行うため、大規模なデータセットの場合には処理に時間がかかる可能性があります。
+コードの簡潔さ:
+QueryTableを使用したコードは、データの取り込みや処理に関する詳細なコードが不要です。一方で、先ほどのコードは、データの取り込みや処理に関する詳細な処理を記述する必要があります。
+選択するコードは、データの量や処理の複雑さに応じて異なります。小規模なデータセットや簡単な処理の場合は、先ほどのコードで問題ありませんが、大規模なデータセットや高速な処理が必要な場合は、QueryTableを使用したコードの方が適している場合があります。
