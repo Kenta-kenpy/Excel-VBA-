@@ -1,0 +1,176 @@
+
+'目的：すでに存在する出力済みCSVファイルの内容を書き出し、ダイアログに沿って操作を行う。
+'      操作によって、ブックのシートに指定したCSVファイルの内容が書き込まれる。
+'QueryTableを使わない方法
+'取り込み先のシートにジャンプ
+'シート初期化　セルの幅と高さを規定値にリセット
+
+Sub CSV_Reading()
+
+'★  Step1　読み込み元のCSVファイルを選択
+MsgBox ("読み込むCSVファイルを指定")
+'カレントフォルダの指定(ファイル検索を行うタイミングで開始時に表示するフォルダ)
+With CreateObject("WScript.Shell")
+    .CurrentDirectory = "C:\Users\swp\Desktop"
+End With
+' 参照するCSVファイル
+Dim inputFile As Variant
+inputFile = Application.GetOpenFilename(FileFilter:="csvファイル,*.csv")
+Dim csvSh As Worksheet
+MsgBox ("読み込むCSVファイルが指定されました")
+Dim S As Variant
+    S = InputBox("このブックのどのシートに" & vbCrLf & "csvを取り込んで書き出しますか")
+'取り込み先のシートが存在しない場合
+'全シートでループ
+' 取り込み先として入力したシートがない場合
+        Dim sheetExists As Boolean
+         ' シートが存在するかどうかを確認します
+        sheetExists = False
+        For Each csvSh In ThisWorkbook.Sheets
+            If csvSh.Name = S Then
+                sheetExists = True
+                Exit For
+            End If
+        Next csvSh
+        If Not sheetExists Then
+            MsgBox ("取り込み先のシートが作成されていません")
+                Exit Sub
+        End If
+        Set csvSh = ThisWorkbook.Worksheets(S)
+    
+'★  Step2　CSVからのデータ書き出し　'https://valmore.work/vba-read-csv/
+'行のデータがすべて入って次の列になったタイミングで列番号を1にリセットする
+    Dim csvNum As Long
+    csvNum = FreeFile
+    Open inputFile For Input As #csvNum
+    
+    'セルの初期値
+    i = 1
+    j = 1
+    
+    Do Until EOF(csvNum) ' ファイルの終わりまで繰り返す
+        Line Input #csvNum, line ' 1行読み込む
+        Dim Items As Variant
+        Items = Split(line, ",")
+
+        For Each item In Items
+            
+            csvSh.Cells(i, j).Value = item
+            j = j + 1 ' 次の列へ
+        Next item
+        j = 1
+        i = i + 1 ' 次の行へ
+    Loop
+    
+    Close #csvNum
+
+'   読み込んだら取り込み先のシートを表示する
+ThisWorkbook.Sheets(S).Activate
+Application.Goto range("A1"), True '取り込み先のシートA1セルにカーソルが合っている状態 起点セル
+
+End Sub
+
+'シート初期化
+Sub ClearSheet()
+Dim S As Variant
+    S = InputBox("このブックのどのシートをクリアしますか")
+' InputBoxでシート名の入力がなかった場合の処理
+    If S = "" Then
+        MsgBox ("シート名を入力してください")
+        Exit Sub  '抜ける
+    End If
+    ' シートが見つからなかった場合の処理
+' 取り込み先として入力したシートがない場合
+        Dim sheetExists As Boolean
+         ' シートが存在するかどうかを確認します
+        sheetExists = False
+        For Each csvSh In ThisWorkbook.Sheets
+            If csvSh.Name = S Then
+                sheetExists = True
+                Exit For
+            End If
+        Next csvSh
+        If Not sheetExists Then
+            MsgBox ("取り込み先のシートが作成されていません")
+                Exit Sub
+        End If
+    ' シートが見つかった場合の処理
+    MsgBox ("シート" & S & "をクリアします")
+Set csvSh = ThisWorkbook.Worksheets(S)
+ThisWorkbook.Worksheets(S).Cells.Clear
+'このときセルの幅と高さもリセット
+Dim W As Double 'セルの幅
+Dim H As Double 'セルの高さ
+Cells.UseStandardWidth = True
+Cells.UseStandardHeight = True
+W = Cells.ColumnWidth
+H = Cells.RowHeight
+MsgBox ("セルの幅と高さを標準状態にリセットします")
+MsgBox ("高さ=" & H & vbCrLf & "幅=" & W) 'リセット後のセルの幅と高さを表示
+Application.Goto range("A1"), True 'A1セルにカーソルが合っている状態 起点セル
+End Sub
+
+
+＜コード全体＞
+CSVファイルのオープン:
+ユーザーが選択したCSVファイルは、Openステートメントを使用して読み取り用に開かれます。FreeFile関数は、現在使用されていないファイル番号を取得するために使用されます。
+inputFile変数には、ユーザーが選択したCSVファイルのパスが保持されます。
+
+CSVファイルの各行のループ処理:
+Do Untilループを使用して、CSVファイルの各行をファイルの終わり（EOF(csvNum)）まで繰り返し処理します。
+Line Inputステートメントは、開いたファイル（csvNum）から1行読み取り、その内容をline変数に割り当てます。
+
+各行の値を分割:
+Split関数を使用して、各行をコンマ（,）で区切り、結果の配列をItems変数に格納します。
+
+ワークシートへの値の書き込み:
+入れ子のループを使用して、Items配列内の各項目を反復処理します。
+各項目（値）は、現在の行（i）と列（j）のワークシートセルに書き込まれます。
+各項目を書き込んだ後、列インデックスjは次の列に移動するためにインクリメントされます。
+
+次の行への移動と列インデックスのリセット:
+1行のすべての項目を書き込んだ後、行インデックスiがインクリメントされ、次の行に移動します。
+さらに、列インデックスjは次の行の最初の列から書き込みを開始するために1にリセットされます。
+
+CSVファイルのクローズ:
+すべてのデータの読み込みと書き込みが完了したら、Closeステートメントを使用してCSVファイルを閉じます。
+このプロセスは、CSVファイル内のすべての行が処理されるまで続きます。
+最後に、CSVの読み込みが完了したことを示すメッセージボックスが表示され、インポートされたデータを含むワークシートがアクティブになり、
+ユーザーが利用しやすいようにセルA1にカーソルが配置されます。
+
+<配列の処理について>
+Do Until EOF(csvNum) ' ファイルの終わりまで繰り返す
+        Line Input #csvNum, line ' 1行読み込む
+        Dim Items As Variant
+        Items = Split(line, ",")
+
+        For Each item In Items
+            
+            csvSh.Cells(i, j).Value = item
+            j = j + 1 ' 次の列へ
+        Next item
+        j = 1
+        i = i + 1 ' 次の行へ
+    Loop
+Do Until ループ:
+
+Do Until文は、指定された条件が満たされるまで、その中のコードを繰り返し実行します。この場合、EOF(csvNum)がTrue（ファイルの終わりに到達した場合）になるまで、以下の処理が繰り返されます。
+1行読み込み:
+Line Inputステートメントは、指定されたファイル番号(csvNum)から1行を読み込みます。その行の内容は、line変数に格納されます。
+
+行の分割:
+Split関数は、読み込んだ1行を指定された区切り文字（ここではコンマ）で分割し、その結果を配列としてItems変数に格納します。つまり、1行のデータをカンマで区切って、各データ項目をItems配列に格納します。
+
+各項目の処理:
+For Eachループを使用して、Items配列内の各要素（item）に順番にアクセスします。
+各項目（データ）は、csvSh.Cells(i, j).Valueで指定されたワークシートのセルに書き込まれます。ここでiは行番号、jは列番号を表します。
+jがインクリメントされ、次の列に移動します。これにより、同じ行内の次のセルにデータが書き込まれます。
+
+列のリセットと行のインクリメント:
+すべての項目を処理した後、列インデックスjは1にリセットされます。これにより、次の行の最初の列に書き込みが開始されます。
+同時に、行インデックスiがインクリメントされ、次の行に移動します。
+
+ループの継続または終了:
+これらの手順が1つの行に対して実行された後、ループが継続されます。これにより、次の行が読み込まれ、同じ処理が繰り返されます。
+ファイルの終わりに到達した場合（EOF(csvNum)がTrue）、ループが終了し、プロシージャ全体が終了します。
+
