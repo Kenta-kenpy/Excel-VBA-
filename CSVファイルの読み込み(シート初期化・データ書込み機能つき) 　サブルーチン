@@ -1,0 +1,153 @@
+'変数一覧
+'.CurrentDirectory  読み込み対象を引用する際の開始ディレクトリ
+'inputFile 読み込み対象のCSVファイル
+'csvSh 取り込むワークシート
+'S csvShの具体的に指定するシート名
+'Line シートのデータを1行単位で格納する変数
+'Items Lineをカンマで要素ごとに区切ったもの
+'Item カンマ区切りの要素1つ1つ
+'csvSh.Cells(i, j).Value シートのセルの座標データ
+'sheetExists 取り込む先のシートがあるか判定するブール値
+'csvNum ファイル番号
+'EOF(ファイル番号) Inputで開いたファイルの現在の処理の位置が、ファイルの読み込み中かどうかブール値TrueかFalseを返す。
+
+Sub CSV_Reading()
+    '★ Step1 取り込み先のシートを指定する
+        'CSVファイルを取り込むExcelシート
+        Dim csvSh As Worksheet
+        Dim S As Variant
+
+        S = InputBox("このブックのどのシートに" & vbCrLf & "csvを取り込みますか")
+        
+    '★ Step2 シートが存在するかのチェック
+        ' シートが存在するかどうかを確認
+        Dim sheetExists As Boolean
+        sheetExists = False
+    
+        For Each csvSh In ThisWorkbook.Sheets
+            ' シートが見つかった場合の処理
+            If csvSh.Name = S Then
+                sheetExists = True
+                MsgBox ("シート" & S & "にデータを取り込みます" & vbCrLf & "その前にシートをクリアします")
+                    Exit For
+            End If
+            
+            ' シートが存在しない場合の処理
+            If csvSh.Name <> S Then
+                sheetExists = False
+                MsgBox ("シートがありません")
+                    Exit Sub '抜ける
+            End If
+        Next csvSh
+    
+    '★ Step3 シート初期化処理
+        'シートが見つかった場合　CSVファイルを取り込むExcelシート名をセット
+        Set csvSh = ThisWorkbook.Worksheets(S)  '取り込み先のシートをセット
+
+        'サブルーチン呼び出し
+        Sheet_Clear (S)
+
+    '★ Step4 CSVからのデータ書き出し
+        'サブルーチン呼び出し
+        CSV_Writing (S)
+    
+End Sub
+
+'サブルーチン　シート初期化処理
+Sub Sheet_Clear(S) '引数Sを渡す
+    ' 取り込み先として入力したシートがない場合
+    Dim sheetExists As Boolean
+    ' シートが存在するかどうかを確認
+    sheetExists = True
+    For Each csvSh In ThisWorkbook.Sheets
+        If sheetExists = True Then
+        ' シートが見つかった場合の処理
+            MsgBox ("シートをクリアします")
+                Exit For
+        End If
+    Next csvSh
+    
+    ' シートが存在しない場合の処理
+    If Not sheetExists Then
+        MsgBox ("シートがありません")
+        Exit Sub '抜ける
+    End If
+    
+    On Error Resume Next 'エラーが起きても続行
+    Set csvSh = ThisWorkbook.Worksheets(S) 'このブックのシートSをリセット
+
+    ThisWorkbook.Worksheets(S).Activate 'シートSを操作すると宣言
+    
+    csvSh.Cells.Clear 'シートのセルを初期化する
+    On Error GoTo 0 'これ以降のエラーは考えにくい
+        
+    MsgBox ("セルの幅と高さを標準状態にリセットしました")
+    
+    'csvSh.Cells.ColumnWidth = 8.08 'セルの幅
+    'csvSh.Cells.RowHeight = 18 'セルの高さ
+    Dim W As Double 'セルの幅
+    Dim H As Double 'セルの高さ
+    Cells.UseStandardWidth = True
+    Cells.UseStandardHeight = True
+    W = Cells.ColumnWidth
+    H = Cells.RowHeight
+
+    MsgBox ("高さ=" & H & vbCrLf & "幅=" & W) 'リセット後のセルの幅と高さを表示
+    Application.Goto Range("A1"), True 'A1セルにカーソルが合っている状態 起点セル
+
+End Sub
+
+'サブルーチン CSVからのデータ書き出し
+Sub CSV_Writing(S) '引数Sを渡す
+    'CSVファイルの参照・選択
+    '参照するCSVファイル
+    MsgBox ("読み込むCSVファイルを指定")
+    'カレントフォルダの指定(ファイル検索を行うタイミングで開始時に表示するフォルダ)
+    With CreateObject("WScript.Shell")
+        .CurrentDirectory = "C:\"
+    End With
+    '読み込み元のCSVファイルを選択
+    Dim inputFile As Variant
+    inputFile = Application.GetOpenFilename(FileFilter:="csvファイル,*.csv")
+    
+    If inputFile <> "" Then
+        MsgBox ("読み込むCSVファイルが指定されました")
+    Else
+        MsgBox ("CSVファイル選択がキャンセルされました")
+            Exit Sub
+    End If
+        
+    Dim csvSh As Worksheet
+    Set csvSh = ThisWorkbook.Worksheets(S) 'このブックのシートSをリセット
+    Dim csvNum As Long
+    csvNum = FreeFile
+    
+    Open inputFile For Input As #csvNum  'ファイル番号csvNumのファイルinputFileを開く
+    'セルの初期値
+    i = 1
+    j = 1
+    
+    Do Until EOF(csvNum) '※真になるまで　この場合はファイルの終わりまで繰り返す
+        'EOF(ファイル番号)とは　Inputで開いたファイルの現在の処理の位置が、ファイルの読み込み中かどうかブール値TrueかFalseを返す。
+        Line Input #csvNum, Line ' 1行読み込む
+        'csvNumはファイル番号　Line:今回シートのデータを1行単位で格納する変数
+        'Line Inputステートメントは、開いたファイル（csvNum）から1行読み取り、line変数に割り当てる。
+        
+        Dim Items As Variant
+        Items = Split(Line, ",")
+        'Split(分割したいデータ,デリミタ)
+        '今回分割したい1行全体のデータをカンマというデリミタで区切る
+        '各行をカンマ（,）で区切った配列をItems変数に格納する。
+        
+        For Each Item In Items 'For Each～Next item　配列Itemsの要素Item(行データ)を順番に処理する
+            csvSh.Cells(i, j).Value = Item '配列のItemをこのシートのセル座標のデータとする
+            j = j + 1 ' 次の列へ
+        Next Item 'ある行データの配列について列を順番に見ていって終わりまで来たら次の行データの配列に移る
+    
+        j = 1 '行が変わったタイミングで列番号を先頭A列から再びチェックするので1に初期化する
+        i = i + 1 ' 次の行へ
+    Loop
+    Close #csvNum 'ファイル番号csvNumのファイルinputFileを閉じる
+
+    MsgBox ("CSV読み込み完了")
+End Sub
