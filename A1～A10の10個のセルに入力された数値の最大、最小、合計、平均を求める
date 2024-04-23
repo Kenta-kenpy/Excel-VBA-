@@ -1,0 +1,82 @@
+'問題：A1～A10の10個のセルに入力された数値の最大、最小、合計、平均を求める
+
+Sub Suuji()
+    '配列
+    Dim num() As Integer
+    ReDim num(1 To 10) As Integer '要素数1～10の10個　1始まり
+    'num(0 To 9),num(9)も要素数10個 0始まり
+    
+    '配列で始点を0からにするか1からにするか
+    '0スタートの場合
+    'Dim j As Integer
+    'For j = LBound(num) To (UBound(num)-1)
+    '     num(j) = WS.Cells(1, j+1).Value '「シートの1行目j列の値」を「j個の要素がある配列」に格納する
+    'Next j
+    
+    '1スタートの場合
+    'Dim j As Integer
+    'For j = LBound(num) To UBound(num)
+    '     num(j) = WS.Cells(1, j).Value '「シートの1行目j列の値」を「j個の要素がある配列」に格納する
+    'Next j
+    
+    'ワークシート
+    Dim WS As Worksheet
+    Set WS = ThisWorkbook.Worksheets("Sheet1")
+    
+    'セルの値を配列にセット A1～A10 ※配列にセルのデータをセットする　1スタート
+    Dim j As Integer
+    For j = LBound(num) To UBound(num) '配列の要素の個数のぶん
+         num(j) = WS.Cells(1, j).Value '「シートの1行目j列の値」を「j個の要素がある配列」に格納する
+    Next j
+   
+    '各種変数
+    Dim max As Integer '最大値
+    max = num(1) '初期値：配列先頭要素
+    Dim min As Integer '最小値
+    min = num(1) '初期値：配列先頭要素
+    Dim sum As Integer '合計値 小数で求めるにはSingleまたはDouble型にしないといけない
+    sum = 0 '初期値:0
+    Dim ave As Double '平均値 小数で求めるにはSingleまたはDouble型にしないといけない
+    ave = 0 '初期値:0
+    
+    'ループ 配列と同じループの始点終点にする必要がある
+    For j = LBound(num) To UBound(num)
+        '最大値
+        If (num(j) > max) Then
+            max = num(j)
+        Else
+            '最大値が求まるまでループを続行
+        End If
+        
+        '最小値
+        If (num(j) < min) Then
+            min = num(j)
+        Else
+            '最小値が求まるまでループを続行
+        End If
+
+        '合計値
+        sum = sum + num(j)
+    Next j
+    
+    '最大値
+    WS.Cells(2, 1) = "最大値"
+    WS.Cells(3, 1) = max
+    '最小値
+    WS.Cells(2, 2) = "最小値"
+    WS.Cells(3, 2) = min
+    '合計値
+    WS.Cells(2, 3) = "合計値"
+    WS.Cells(3, 3) = sum
+     '平均値
+    ave = sum / 10  '配列要素数で合計値を割る
+    WS.Cells(2, 4) = "平均値"
+    WS.Cells(3, 4) = Format(ave, "#.##")
+End Sub
+
+
+'配列の要素の個数について
+'num(a To b) と書いた場合
+'・・・要素の個数はa～bまでの個数　よって　b-a+1個
+'単に num(a)と書いた場合
+'・・・要素の個数は0および1～aまでの個数　よって a+1個
