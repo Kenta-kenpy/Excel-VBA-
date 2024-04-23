@@ -1,0 +1,82 @@
+'問題：A1～A10の10個のセルに入力された数値を昇順ソート降順ソートする
+'※Forループの動きに注意　Forの中に入るのか抜けるのか　配列の最後の部分
+'ループの3要素　初期値、変化範囲、変化量
+
+Sub Seiretu()
+    '変数
+    '元の数値配列
+    Dim num() As Integer
+    ReDim num(1 To 10) As Integer
+    'ワークシート
+    Dim WS As Worksheet
+    Set WS = ThisWorkbook.Worksheets("Sheet1")
+    '昇順配列
+    Dim asc() As Integer
+    ReDim asc(1 To 10) As Integer
+    '降順配列
+    Dim desc() As Integer
+    ReDim desc(1 To 10) As Integer
+    'カウンター
+    Dim i As Integer '比較対象インデックス 配列j番目に対して右の要素に当たるj+1番目からスタート
+    Dim j As Integer '配列のインデックス 配列の前から順にチェック
+    '仮の値
+    Dim t1 As Integer '昇順
+    
+    'セルの値を配列にセットする
+    For j = LBound(num) To UBound(num) '配列の要素の個数ぶん
+        num(j) = WS.Cells(1, j).Value '「シートの1行目j列の値」を「j個の要素がある配列」に格納する
+    Next j
+    
+    '昇順ソート(右に行くほど大きくなる)
+    '配列の走査
+    For j = LBound(num) To UBound(num)
+        '要素の比較
+        For i = (j + 1) To 10 Step 1 '要素数の10以下　10になるまで1刻みで増やす(前から順に比較するため)
+            '要素の交換条件
+            If Not (num(i) > num(j)) Then   '比較対象要素iが配列要素jより大きくない場合
+                '要素交換
+                t1 = num(i)
+                num(i) = num(j)
+                num(j) = t1
+            End If
+        Next i
+    Next j
+    
+    '昇順ソートした配列をコピー(元の配列と区別のため)
+    asc() = num()
+    
+    'タイトル
+    WS.Cells(2, 1) = "昇順"
+    
+    '昇順ソートの結果をシートのセルに出力
+    For j = LBound(asc) To UBound(asc) '配列の要素の個数ぶん
+        WS.Cells(3, j).Value = asc(j) 'シートの3行目に出力
+    Next j
+    
+    '降順ソート(右に行くほど小さくなる)
+    '配列の走査
+    For j = LBound(num) To UBound(num)
+        '要素の比較
+        For i = (j + 1) To 10 Step 1 '要素数の10以下　10になるまで1刻みで増やす(前から順に比較するため)
+            '要素の交換条件
+            If Not (num(i) < num(j)) Then   '比較対象要素iが配列要素jより小さくない場合
+                '要素交換
+                t2 = num(i)
+                num(i) = num(j)
+                num(j) = t2
+            End If
+        Next i
+    Next j
+    
+    '降順ソートした配列をコピー(元の配列と区別のため)
+    desc() = num()
+    
+    'タイトル
+    WS.Cells(4, 1) = "降順"
+    
+    '降順ソートの結果をシートのセルに出力
+    For j = LBound(desc) To UBound(desc) '配列の要素の個数ぶん
+        WS.Cells(5, j).Value = desc(j) 'シートの5行目に出力
+    Next j
+    
+End Sub
