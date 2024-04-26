@@ -1,0 +1,142 @@
+'問題：A1～A10、B1～B10の20個のセルに入力された数値をC行に1列マージ
+'      マージ後の配列についてE行にラベル、F行に値を出力(20個の数値の最大、最小、合計、平均)
+'      マージ後の配列について昇順ソート、降順ソートしたものをそれぞれH行とJ行に出力(ラベルG行、I行)
+
+'https://calmdays.net/vbatips/arraymerge/
+'https://qiita.com/yakkeman/items/db6313e66cb3c9c4cc49
+'https://www.hokkyokun.com/vba-mergesort/#google_vignette
+'https://www.higashisalary.com/entry/excel-concat
+'https://thom.hateblo.jp/entry/2015/12/26/014523
+Const totalRows As Integer = 2  '行の数(定数)
+Const totalColumns As Integer = 3 ' 列の数
+Sub MergeSort()
+    Dim WS As Worksheet
+    Dim i As Integer, j As Integer, k As Integer
+    
+    ' 対象のワークシートを設定
+    Set WS = ThisWorkbook.Worksheets("Sheet1")
+    '★step1 配列生成およびマージ
+    'totalRows = 2 ' 行の数
+    'Const totalColumns As Integer = 3 ' 列の数
+    Dim dataArray() As Integer
+    ReDim dataArray(1 To (totalRows * totalColumns)) As Integer ' 配列を初期化 行×列で表す長方形の面積ぶん
+    
+    k = 1 ' 配列のインデックスを初期化
+    
+    ' 各行のデータを1つの配列にまとめる '2行10列
+    For i = 1 To totalRows '行数
+        For j = 1 To totalColumns '列数
+            dataArray(k) = WS.Cells(i, j).Value '配列は1スタート
+            k = k + 1
+        Next j
+    Next i
+    
+    ' 配列の内容を横に表示
+    Dim a As String
+    WS.Cells(3, 1) = "配列単純マージ"
+    For j = LBound(dataArray) To UBound(dataArray)
+        a = a & dataArray(j) & " "
+        '配列の値を4行目にコピー
+        '配列にセットしたものをメッセージ表示
+        WS.Cells(4, j) = dataArray(j)
+        MsgBox ("マージ配列 " & j & "番要素: " & dataArray(j))
+    Next j
+    MsgBox (a)
+        
+    '----------------------------------------------------------------------------------------------
+    
+    '★step2  マージ配列について最大値・最小値・合計・平均値を求める
+    '各種変数
+    Dim max As Integer '最大値
+    max = dataArray(1) '初期値：配列先頭要素
+    Dim min As Integer '最小値
+    min = dataArray(1) '初期値：配列先頭要素
+    Dim sum As Integer '合計値 小数で求めるにはSingleまたはDouble型にしないといけない
+    sum = 0 '初期値:0
+    Dim ave As Double '平均値 小数で求めるにはSingleまたはDouble型にしないといけない
+    ave = 0 '初期値:0
+
+    Dim t As Integer '退避場所
+    For k = LBound(dataArray) To UBound(dataArray)
+        '最大値
+        If (dataArray(k) > max) Then
+            max = dataArray(k)
+        End If
+
+        '最小値
+        If (dataArray(k) < min) Then
+            min = dataArray(k)
+        End If
+
+        '合計値
+        sum = sum + dataArray(k)
+    Next k
+    
+'    For k = LBound(dataArray) To UBound(dataArray)
+'    '合計値
+'        sum = sum + dataArray(k)
+'    Next k
+
+    '最大値
+    WS.Cells(5, 1) = "最大値"
+    WS.Cells(6, 1) = max
+    '最小値
+    WS.Cells(5, 2) = "最小値"
+    WS.Cells(6, 2) = min
+    '合計値
+    WS.Cells(5, 3) = "合計値"
+    WS.Cells(6, 3) = sum
+     '平均値
+    ave = sum / (UBound(dataArray) - LBound(dataArray) + 1) '配列要素数で合計値を割る
+    WS.Cells(5, 4) = "平均値"
+    WS.Cells(6, 4) = Format(ave, "#.##")
+
+    '★step3  マージ配列について昇順ソート・降順ソート
+    'カウンター
+    'Dim i As Integer '比較対象インデックス 配列j番目に対して右の要素に当たるj+1番目からスタート
+
+    '昇順ソート
+    '配列の走査
+    For k = LBound(dataArray) To UBound(dataArray) - 1
+        '要素の比較
+        For i = (k + 1) To UBound(dataArray) Step 1 '要素数の20まで1刻みで増やす(前から順に比較するため)
+            '要素の交換条件
+            If (dataArray(i) < dataArray(k)) Then   '比較対象要素iが配列要素jより小さい場合
+                '要素交換
+                t = dataArray(i)
+                dataArray(i) = dataArray(k)
+                dataArray(k) = t
+            End If
+        Next i
+    Next k
+
+    'タイトル
+    WS.Cells(8, 1) = "昇順ソート"
+    '昇順ソートの結果をシートのセルに出力
+    For k = LBound(dataArray) To UBound(dataArray) '配列の要素の個数ぶん
+        WS.Cells(9, k - LBound(dataArray) + 1).Value = dataArray(k)
+    Next k
+
+    '降順ソート
+    '配列の走査
+    For k = LBound(dataArray) To UBound(dataArray) - 1
+        '要素の比較
+        For i = (k + 1) To UBound(dataArray) Step 1 '要素数の20まで1刻みで増やす(前から順に比較するため)
+            '要素の交換条件
+            If (dataArray(i) > dataArray(k)) Then   '比較対象要素iが配列要素jより大きくない場合
+                '要素交換
+                t = dataArray(i)
+                dataArray(i) = dataArray(k)
+                dataArray(k) = t
+            End If
+        Next i
+    Next k
+
+    'タイトル
+    WS.Cells(10, 1) = "降順ソート"
+    '降順ソートの結果をシートのセルに出力
+    For k = LBound(dataArray) To UBound(dataArray) '配列の要素の個数ぶん
+        WS.Cells(11, k - LBound(dataArray) + 1).Value = dataArray(k)
+    Next k
+
+End Sub
