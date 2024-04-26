@@ -1,3 +1,4 @@
+'配列のマージver3
 '問題：A1～A10、B1～B10の20個のセルに入力された数値をC行に1列マージ
 '      マージ後の配列についてE行にラベル、F行に値を出力(20個の数値の最大、最小、合計、平均)
 '      マージ後の配列について昇順ソート、降順ソートしたものをそれぞれH行とJ行に出力(ラベルG行、I行)
@@ -8,7 +9,7 @@
 'https://www.higashisalary.com/entry/excel-concat
 'https://thom.hateblo.jp/entry/2015/12/26/014523
 Const totalRows As Integer = 2  '行の数(定数)
-Const totalColumns As Integer = 3 ' 列の数
+Const totalColumns As Integer = 10 ' 列の数
 Sub MergeSort()
     Dim WS As Worksheet
     Dim i As Integer, j As Integer, k As Integer
@@ -16,8 +17,6 @@ Sub MergeSort()
     ' 対象のワークシートを設定
     Set WS = ThisWorkbook.Worksheets("Sheet1")
     '★step1 配列生成およびマージ
-    'totalRows = 2 ' 行の数
-    'Const totalColumns As Integer = 3 ' 列の数
     Dim dataArray() As Integer
     ReDim dataArray(1 To (totalRows * totalColumns)) As Integer ' 配列を初期化 行×列で表す長方形の面積ぶん
     
@@ -72,11 +71,6 @@ Sub MergeSort()
         sum = sum + dataArray(k)
     Next k
     
-'    For k = LBound(dataArray) To UBound(dataArray)
-'    '合計値
-'        sum = sum + dataArray(k)
-'    Next k
-
     '最大値
     WS.Cells(5, 1) = "最大値"
     WS.Cells(6, 1) = max
