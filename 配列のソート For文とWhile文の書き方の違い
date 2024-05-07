@@ -1,4 +1,5 @@
 '配列のソート for文
+
 Sub ForSort()
     '元の配列
     Dim num() As Integer
@@ -71,10 +72,12 @@ Sub ForSort()
     For j = LBound(num) To UBound(num)
         WS.Cells(5, j).Value = num(j)
     Next j
+        
 End Sub
 
 'For文をWhile文に書き直す
-'配列のソート while文
+'配列のソート while文・For文混在
+
 Sub WhileSort()
     '元の配列
     Dim num() As Integer
@@ -153,3 +156,84 @@ Sub WhileSort()
     Loop
 End Sub
 
+'For文をWhile文に書き直す
+'配列のソート while文
+Sub WhileSort()
+    '元の配列
+    Dim num() As Integer
+    ReDim num(1 To 10) As Integer
+    'ワークシート
+    Dim WS As Worksheet
+    Set WS = ThisWorkbook.Worksheets("Sheet1")
+
+    'カウンター
+    Dim i As Integer '比較対象インデックス 配列j番目に対して右の要素に当たるj+1番目からスタート
+    Dim j As Integer '配列のインデックス 配列の前から順にチェック
+    '仮の値
+    Dim t As Integer
+    
+    Dim a As String
+    'セルの値を配列にセットする
+    j = 1 '初期値はnum配列の先頭
+    Do While j <= UBound(num)
+        num(j) = WS.Cells(1, j).Value
+        '配列の値を横に表示
+        a = a & num(j) & " " '配列の要素を横に表示 スペース区切り
+        j = j + 1
+    Loop
+    MsgBox (a)
+    
+    'whileループでの昇順ソート
+    j = 1 '配列先頭スタート
+    '配列の走査
+    Do While j <= UBound(num)
+        '要素の比較
+        i = j + 1 'jの右の要素
+        Do While i <= UBound(num)  '要素数以下
+            '要素交換条件
+            If (num(i) < num(j)) Then   '比較対象要素iが配列要素jより小さい場合
+                '要素交換
+                t = num(i)
+                num(i) = num(j)
+                num(j) = t
+            End If
+        i = i + 1
+        Loop
+    j = j + 1
+    Loop
+
+    '昇順ソート後の配列をシートのセルに出力
+    WS.Cells(2, 1).Value = "昇順ソート"
+    j = 1
+    Do While j <= UBound(num)
+        WS.Cells(3, j).Value = num(j)
+        j = j + 1
+    Loop
+    
+    'whileループでの降順ソート
+    j = 1
+    '配列の走査
+    Do While j <= UBound(num)
+        '要素の比較
+        i = j + 1 'jの右の要素
+        Do While i <= UBound(num)  '要素数以下
+            '要素交換条件
+            If (num(i) > num(j)) Then   '比較対象要素iが配列要素jより大きい場合
+                '要素交換
+                t = num(i)
+                num(i) = num(j)
+                num(j) = t
+            End If
+        i = i + 1
+        Loop
+    j = j + 1
+    Loop
+    
+    '降順ソート後の配列をシートのセルに出力
+    WS.Cells(4, 1).Value = "降順ソート"
+    j = 1
+    Do While j <= UBound(num)
+        WS.Cells(5, j).Value = num(j)
+        j = j + 1
+    Loop
+End Sub
