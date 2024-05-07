@@ -1,5 +1,4 @@
 '配列のソート for文
-
 Sub ForSort()
     '元の配列
     Dim num() As Integer
@@ -72,12 +71,10 @@ Sub ForSort()
     For j = LBound(num) To UBound(num)
         WS.Cells(5, j).Value = num(j)
     Next j
-        
 End Sub
 
 'For文をWhile文に書き直す
 '配列のソート while文
-
 Sub WhileSort()
     '元の配列
     Dim num() As Integer
@@ -155,3 +152,4 @@ Sub WhileSort()
         j = j + 1
     Loop
 End Sub
+
