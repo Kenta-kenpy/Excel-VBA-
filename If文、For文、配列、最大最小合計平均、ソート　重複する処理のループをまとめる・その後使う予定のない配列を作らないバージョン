@@ -65,21 +65,24 @@ Sub Hairetsu_MIX3()
     '最大値と最小値のセルに色付け
      'https://kirinote.com/excelvba-duplication-maxindex/
     '配列の中で最大値と最小値のセルを表す変数
-    Dim Max_row As Integer ' 最大値の行番号
-    Dim Max_col As Integer ' 最大値の列番号
-    Dim Min_row As Integer ' 最小値の行番号
-    Dim Min_col As Integer ' 最小値の列番号
+    Dim Max_row As Integer ' 最大値セルの行番号
+    Dim Max_col As Integer ' 最大値セルの列番号
+    Dim Min_row As Integer ' 最小値セルの行番号
+    Dim Min_col As Integer ' 最小値セルの列番号
     
     k = 1
     '配列全体を行と列で調べる
     For i = 1 To totalRows ' 行数
         For j = 1 To totalColumns ' 列数
+        '配列の要素が最大値または最小値と一致した場合
+        'そのとき最大値または最小値の行番号または列番号に
+        '配列のセル座標の行番号iと列番号jを入れてあげる
             If dataArray(k) = max Then '配列の要素が最大値と一致
-                Max_row = i ' 最大値の行番号
-                Max_col = j ' 最大値の列番号
+                Max_row = i ' 最大値セルの行番号
+                Max_col = j ' 最大値セルの列番号
             ElseIf dataArray(k) = min Then  '配列の要素が最小値と一致
-                Min_row = i ' 最小値の行番号
-                Min_col = j ' 最小値の列番号
+                Min_row = i ' 最小値セルの行番号
+                Min_col = j ' 最小値セルの列番号
             End If
             k = k + 1 '配列の次の要素へ
         Next j
