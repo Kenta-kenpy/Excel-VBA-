@@ -1,0 +1,177 @@
+'重複する処理のループをまとめる・その後使う予定のない配列を作らない
+'使用するVBAのロジック:If文、For文、配列、最大最小合計平均、ソート
+Const totalRows As Integer = 10  '行の数(定数)
+Const totalColumns As Integer = 10 ' 列の数(定数)
+
+Sub Hairetsu_MIX3()
+    '★Step1 ワークシート設定
+    Dim WS As Worksheet
+    Set WS = ThisWorkbook.Worksheets("Sheet4")
+'--------------------------------------------------------------------------------
+    '★Step2 配列の下準備
+    '★Step2-1 配列作成
+    Dim dataArray() As Integer
+    ReDim dataArray(1 To (totalRows * totalColumns)) As Integer  '定数で指定した行列ぶんの配列
+    '配列のインデックスを1スタートに初期化
+    Dim k As Integer
+    k = 1
+
+    '★Step2-2 データを1つの配列に格納する
+    Dim i As Integer, j As Integer
+    For i = 1 To totalRows '行数
+        For j = 1 To totalColumns '列数
+            dataArray(k) = WS.Cells(i, j).Value
+            k = k + 1
+            '★Step2-3 配列の要素の値に応じて処理を行う
+            '※表の値の偶奇で判断する
+            'セルの値が偶数または奇数なら
+            If WorksheetFunction.IsEven(WS.Cells(i, j).Value) Then '偶数
+                WS.Cells(i, j + totalColumns).Value = "●"
+            Else '奇数
+                WS.Cells(i, j + totalColumns).Value = "〇"
+            End If
+            '中央ぞろえ
+            WS.Cells(i, j + totalColumns).HorizontalAlignment = xlCenter
+        Next j
+    Next i
+'--------------------------------------------------------------------------------
+    '★Step3 10×10の配列について最大値・最小値・合計・平均値を求める
+    '各種変数
+    Dim max As Integer '最大値
+    max = dataArray(1) '初期値：配列先頭要素
+    Dim min As Integer '最小値
+    min = dataArray(1) '初期値：配列先頭要素
+    Dim sum As Integer '合計値 小数で求めるにはSingleまたはDouble型にしないといけない
+    sum = 0 '初期値:0
+    Dim ave As Double '平均値 小数で求めるにはSingleまたはDouble型にしないといけない
+    ave = 0 '初期値:0
+
+    Dim t As Integer '退避場所
+    For k = LBound(dataArray) To UBound(dataArray)
+        '最大値
+        If (dataArray(k) > max) Then
+            max = dataArray(k)
+        End If
+
+        '最小値
+        If (dataArray(k) < min) Then
+            min = dataArray(k)
+        End If
+
+        '合計値
+        sum = sum + dataArray(k)
+    Next k
+    
+    '最大値と最小値のセルに色付け
+     'https://kirinote.com/excelvba-duplication-maxindex/
+    '配列の中で最大値と最小値のセルを表す変数
+    Dim Max_row As Integer ' 最大値の行番号
+    Dim Max_col As Integer ' 最大値の列番号
+    Dim Min_row As Integer ' 最小値の行番号
+    Dim Min_col As Integer ' 最小値の列番号
+    
+    k = 1
+    '配列全体を行と列で調べる
+    For i = 1 To totalRows ' 行数
+        For j = 1 To totalColumns ' 列数
+            If dataArray(k) = max Then '配列の要素が最大値と一致
+                Max_row = i ' 最大値の行番号
+                Max_col = j ' 最大値の列番号
+            ElseIf dataArray(k) = min Then  '配列の要素が最小値と一致
+                Min_row = i ' 最小値の行番号
+                Min_col = j ' 最小値の列番号
+            End If
+            k = k + 1 '配列の次の要素へ
+        Next j
+    Next i
+
+    ' 最大値のセルに色付け
+    WS.Cells(Max_row, Max_col).Interior.Color = vbMagenta 'マゼンタ
+    ' 最小値のセルに色付け
+    WS.Cells(Min_row, Min_col).Interior.Color = vbCyan 'シアン
+
+    '最大値
+    WS.Cells(12, 1) = "最大値"
+    WS.Cells(13, 1) = max
+    
+    '最小値
+    WS.Cells(12, 2) = "最小値"
+    WS.Cells(13, 2) = min
+    
+    '合計値
+    WS.Cells(12, 3) = "合計値"
+    WS.Cells(13, 3) = sum
+    '平均値
+    ave = sum / (UBound(dataArray) - LBound(dataArray) + 1) '配列要素数で合計値を割る
+    WS.Cells(12, 4) = "平均値"
+    WS.Cells(13, 4) = Format(ave, "#.##")
+'--------------------------------------------------------------------------------
+    '★Step4 配列のデータを整理して昇順にソートし直す
+    WS.Cells(14, 1) = "昇順"
+    WS.Cells(14, 11) = "降順"
+    '★Step4-1 昇順ソート
+    For k = LBound(dataArray) To UBound(dataArray)
+        '要素の比較
+        For i = (k + 1) To UBound(dataArray) Step 1 '配列末尾までインデックスを1刻みで増やす(前から順に比較するため)
+            '要素の交換条件
+            If (dataArray(i) < dataArray(k)) Then   '比較対象要素iが配列要素kより小さい場合
+                '要素交換
+                t = dataArray(i)
+                dataArray(i) = dataArray(k)
+                dataArray(k) = t
+            End If
+        Next i
+    Next k
+    '★Step4-2 昇順ソート後の配列をセルに格納
+    k = 1
+    For i = 15 To (15 + totalRows - 1) '行数 15行下へずらす
+        For j = 1 To totalColumns '列数
+            WS.Cells(i, j).Value = dataArray(k) 'ずらして表示するソート後配列要素をセルにセット
+            k = k + 1
+            '★Step4-3 配列の要素の値に応じて処理を行う
+            '※表の値の偶奇で判断する
+            'セルの値が偶数または奇数なら
+            If WorksheetFunction.IsEven(WS.Cells(i, j).Value) Then '偶数
+                WS.Cells(i + 10, j).Value = "●"
+            Else '奇数
+                WS.Cells(i + 10, j).Value = "〇"
+            End If
+            '中央ぞろえ
+            WS.Cells(i + 10, j).HorizontalAlignment = xlCenter
+        Next j
+    Next i
+'--------------------------------------------------------------------------------
+    '★Step5 配列のデータを整理して降順にソートし直す
+    '★Step5-1 降順ソート
+    k = 1
+    For k = LBound(dataArray) To UBound(dataArray)
+        '要素の比較
+        For i = (k + 1) To UBound(dataArray) Step 1 '配列末尾までインデックスを1刻みで増やす(前から順に比較するため)
+            '要素の交換条件
+            If (dataArray(i) > dataArray(k)) Then   '比較対象要素iが配列要素kより大きい場合
+                '要素交換
+                t = dataArray(i)
+                dataArray(i) = dataArray(k)
+                dataArray(k) = t
+            End If
+        Next i
+    Next k
+    '★Step5-2  降順ソート後の配列をセルに格納
+    k = 1
+    For i = 15 To (15 + totalRows - 1) '行数 15行下へずらす
+        For j = 11 To (11 + totalColumns - 1) '列数 10列右へずらす
+            WS.Cells(i, j).Value = dataArray(k) 'ずらして表示するソート後配列要素をセルにセット
+            k = k + 1
+            '★Step5-3 配列の要素の値に応じて処理を行う
+            '※表の値の偶奇で判断する
+            'セルの値が偶数または奇数なら
+            If WorksheetFunction.IsEven(WS.Cells(i, j).Value) Then '偶数
+                WS.Cells(i + 10, j).Value = "●"
+            Else '奇数
+                WS.Cells(i + 10, j).Value = "〇"
+            End If
+            '中央ぞろえ
+            WS.Cells(i + 10, j).HorizontalAlignment = xlCenter
+        Next j
+    Next i
+End Sub
