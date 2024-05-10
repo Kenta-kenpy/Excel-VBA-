@@ -1,0 +1,48 @@
+'配列を使わずにセルのデータだけで最大最小合計を求める
+Const totalRows As Integer = 10  '行の数(定数)
+Const totalColumns As Integer = 10 ' 列の数(定数)
+Sub NoUse配列()
+    Dim WS As Worksheet
+    Set WS = ThisWorkbook.Worksheets("Sheet4")
+    
+    Dim i As Integer
+    Dim j As Integer
+    Dim s As Integer
+    Dim max As Integer
+    max = WS.Cells(1, 1).Value
+    Dim min As Integer
+    min = WS.Cells(1, 1).Value
+    Dim sum As Integer
+    sum = 0
+    Dim ave As Double
+    ave = 0
+    
+    For i = 1 To totalRows '行数
+        For j = 1 To totalColumns '列数
+            '最大値
+            If (WS.Cells(i, j).Value > max) Then
+                max = WS.Cells(i, j).Value
+            End If
+
+            '最小値
+            If (WS.Cells(i, j).Value < min) Then
+                min = WS.Cells(i, j).Value
+            End If
+            
+            '合計値
+            sum = sum + WS.Cells(i, j).Value
+        Next j
+    Next i
+    '平均値
+    ave = sum / (totalRows * totalColumns)
+    
+    WS.Cells(12, 1) = "最大値"
+    WS.Cells(13, 1) = max
+    WS.Cells(12, 2) = "最小値"
+    WS.Cells(13, 2) = min
+    WS.Cells(12, 3) = "合計値"
+    WS.Cells(13, 3) = sum
+    WS.Cells(12, 4) = "平均値"
+    WS.Cells(13, 4) = ave
+    
+End Sub
