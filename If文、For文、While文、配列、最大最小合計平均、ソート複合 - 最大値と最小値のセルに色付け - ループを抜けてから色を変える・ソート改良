@@ -1,0 +1,180 @@
+'ソート部分をループ削減
+'ループを増やさない
+'配列を使わずにセルのデータだけで最大最小合計を求める
+'ループを抜けてから色を変える！
+
+Const totalRows As Integer = 10  '行の数(定数)
+Const totalColumns As Integer = 10 ' 列の数(定数)
+Sub NoUse配列()
+'★Step1 ワークシート設定
+    Dim WS As Worksheet
+    Set WS = ThisWorkbook.Worksheets("Sheet4")
+    
+'★Step2 配列作成
+    '昇順ソート配列
+    Dim dataArray() As Integer
+    ReDim dataArray(1 To (totalRows * totalColumns)) As Integer
+    '降順ソート配列
+    Dim reverseArray() As Integer
+    ReDim reverseArray(1 To (totalRows * totalColumns)) As Integer
+    
+'★Step3 パラメータ初期値
+    Dim i As Integer
+    Dim j As Integer
+    Dim max As Integer
+    max = WS.Cells(1, 1).Value
+    Dim min As Integer
+    min = WS.Cells(1, 1).Value
+    Dim sum As Integer
+    sum = 0
+    Dim ave As Double
+    ave = 0
+
+    '配列のインデックスを1スタートに初期化
+    Dim k As Integer
+    k = 1
+    
+    '配列の中で最大値のセルと最小値のセルの座標を表す変数
+    Dim max_i As Integer '最大値セルの行番号
+    Dim max_j As Integer '最大値セルの列番号
+    Dim min_i As Integer '最小値セルの行番号
+    Dim min_j As Integer '最小値セルの列番号
+   '-----------------------------------------------------------------------------------
+'★Step4 最大値・最小値・合計値の計算と図形処理 最大値・最小値のセルの色
+    For i = 1 To totalRows '行数
+        For j = 1 To totalColumns '列数
+            '配列にセルの値をセットする
+            dataArray(k) = WS.Cells(i, j).Value
+            '最大値・最小値・合計値の計算
+            '最大値
+            If (WS.Cells(i, j).Value > max) Then
+                max = WS.Cells(i, j).Value
+                '最大値の座標に 該当するセルの行番号と列番号をセット
+                max_i = i
+                max_j = j
+            End If
+
+            '最小値
+            If (WS.Cells(i, j).Value < min) Then
+                min = WS.Cells(i, j).Value
+                '最小値の座標に 該当するセルの行番号と列番号をセット
+                min_i = i
+                min_j = j
+            End If
+            '↑最大値と最小値はこの段階で求まった
+            
+            '合計値
+            sum = sum + WS.Cells(i, j).Value
+            '配列の要素の値に応じて図形処理を行う
+            'セルの値が偶数または奇数なら
+            If WorksheetFunction.IsEven(WS.Cells(i, j).Value) Then '偶数
+                WS.Cells(i, j + totalColumns).Value = "●"
+            Else '奇数
+                WS.Cells(i, j + totalColumns).Value = "〇"
+            End If
+            '中央揃え
+            WS.Cells(i, j + totalColumns).HorizontalAlignment = xlCenter
+            k = k + 1 '配列の次の要素へ
+        Next j
+    Next i
+    
+    '色を変えるのはループを抜けた後！
+    'ループを増やさないためには、上の最大値などを求めたループ内で座標を求める
+    WS.Cells(max_i, max_j).Interior.Color = vbMagenta 'マゼンタ
+    WS.Cells(min_i, min_j).Interior.Color = vbCyan  'シアン
+    
+    '平均値
+    ave = sum / (totalRows * totalColumns)
+   '-----------------------------------------------------------------------------------
+'★Step5 最大値・最小値・合計値・平均値の結果の出力
+    WS.Cells(12, 1) = "最大値"
+    WS.Cells(12, 1).Interior.Color = vbMagenta 'マゼンタ
+    WS.Cells(13, 1) = max
+    WS.Cells(12, 2) = "最小値"
+    WS.Cells(12, 2).Interior.Color = vbCyan 'シアン
+    WS.Cells(13, 2) = min
+    WS.Cells(12, 3) = "合計値"
+    WS.Cells(13, 3) = sum
+    WS.Cells(12, 4) = "平均値"
+    WS.Cells(13, 4) = ave
+   '-----------------------------------------------------------------------------------
+'★Step6 配列のデータを整理してソートし直す
+    WS.Cells(14, 1) = "昇順"
+    WS.Cells(14, 11) = "降順"
+    
+    '降順配列reverseArrayに昇順配列dataArrayをコピー(ソート前に配列を用意)
+    reverseArray = dataArray
+    Dim t As Integer '要素交換での退避場所
+    
+    '★Step6-1 昇順ソート・降順ソートをまとめて行う
+    k = 1
+    '配列全体(先頭～末尾)  dataArray(1～100まで)
+    For k = LBound(dataArray) To UBound(dataArray) '配列の要素チェックの回数は昇順降順ともに同じ
+        '比較範囲(先頭1つ右～末尾)
+        For i = (k + 1) To UBound(dataArray) Step 1 '前から順に1つずつ比較
+            '★昇順ソート 要素交換条件 右に行くほど大きくなる
+            '右にある要素が小さければ交換
+            If (dataArray(i) < dataArray(k)) Then
+                '要素交換
+                t = dataArray(i)
+                dataArray(i) = dataArray(k)
+                dataArray(k) = t
+            End If
+            
+            '※降順ソートはコピーした配列で行う
+            '★降順ソート 要素交換条件 右に行くほど小さくなる
+            '右にある要素が大きければ交換
+            If (reverseArray(i) > reverseArray(k)) Then
+                '要素交換
+                t = reverseArray(i)
+                reverseArray(i) = reverseArray(k)
+                reverseArray(k) = t
+            End If
+        Next i
+    Next k
+    
+    '-----------------------------------------------------------------------------------
+    '★Step6-2 昇順ソート後配列をセルに格納
+    k = 1
+    For i = 15 To (15 + totalRows - 1) '行番号 開始は15スタート、後ろも15を加えることで15行下へずらす
+        For j = 1 To totalColumns '列番号
+            '※ずらして表示する昇順ソート後配列要素をセルにセット
+            WS.Cells(i, j).Value = dataArray(k) '・・・・・・昇順ソート配列をセット
+            '中央揃え
+            WS.Cells(i, j).HorizontalAlignment = xlCenter
+            k = k + 1  '配列の次の要素へ
+            '★セルの値に応じて記号表示処理を行う
+            'セルの値が偶数または奇数なら
+            If WorksheetFunction.IsEven(WS.Cells(i, j).Value) Then '偶数
+                WS.Cells(i + 10, j).Value = "●"
+            Else '奇数
+                WS.Cells(i + 10, j).Value = "〇"
+            End If
+            '中央揃え
+            WS.Cells(i + 10, j).HorizontalAlignment = xlCenter
+        Next j
+    Next i
+    '-----------------------------------------------------------------------------------
+    '★Step6-3 降順ソート後配列をセルに格納
+    '降順配列は昇順配列
+    k = 1
+    For i = 15 To (15 + totalRows - 1) '行数 15行下へずらす
+        For j = 11 To (11 + totalColumns - 1) '列数
+            '※ずらして表示する降順ソート後配列要素をセルにセット
+            WS.Cells(i, j).Value = reverseArray(k) '・・・・・降順ソート配列をセット
+            '中央揃え
+            WS.Cells(i, j).HorizontalAlignment = xlCenter
+            k = k + 1  '配列の次の要素へ
+            '★セルの値に応じて記号表示処理を行う
+            'セルの値が偶数または奇数なら
+            If WorksheetFunction.IsEven(WS.Cells(i, j).Value) Then '偶数
+                WS.Cells(i + 10, j).Value = "●"
+            Else '奇数
+                WS.Cells(i + 10, j).Value = "〇"
+            End If
+            '中央揃え
+            WS.Cells(i + 10, j).HorizontalAlignment = xlCenter
+        Next j
+    Next i
+
+End Sub
