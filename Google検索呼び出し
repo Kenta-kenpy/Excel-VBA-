@@ -1,0 +1,6 @@
+Sub ブラウザ起動()
+Dim WebPage As String
+'開きたいwebページのURLを指定
+WebPage = InputBox(Prompt:="URLを入力" & vbCrLf & "標準：Google検索", Default:="https://www.google.co.jp/")
+CreateObject("Wscript.Shell").Run WebPage
+End Sub
