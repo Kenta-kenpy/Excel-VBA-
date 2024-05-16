@@ -16,11 +16,11 @@ Sub CONF出力()
     'もっとも幅の広いセルに合わせ列の幅を自動調整
     Sheet_conf.Range("B1:C1").EntireColumn.AutoFit
     Dim saveFileName As String '保存ファイル名
-    Dim savePath As String '保存場所
+    Dim savepath As String '保存場所全体パス
     'confシートのC1セルから保存ファイル名を取得
     saveFileName = Sheet_conf.Range("C1").Value
     '設定シートのB1セルから保存場所を取得
-    savePath = Sheet_set.Range("B1").Value
+    savepath = Sheet_set.Range("B1").Value
     
     '★step2 confシートのデータの読み込み ※B1セルを除く
     '★step2-1 列の使用済みセルの最大行番号を求める処理に用いる変数宣言
@@ -87,4 +87,11 @@ Sub CONF出力()
 
     Close #FileNum
     '*** 書き込み工程 終了*** ◆◆◆
+    Dim filePath As String 'ファイルパス
+    filePath = saveFileName 'ファイルパスは出力するファイルのもの
+    Dim folderPath As String 'フォルダパス
+    save = InStrRev(filePath, "\") 'InStrRev関数は、指定文字"\"を文字列filePathの後ろから先頭に向けて検索し見つかった位置を返す。
+    folderPath = Left(saveFileName, save - 1)
+    '保存したフォルダを開く
+    CreateObject("WScript.Shell").Run folderPath
 End Sub
