@@ -1,0 +1,121 @@
+confファイル 使用済み最大行番号取得(起動時にconfシート選択で正しく取得)、パス名取得 解決
+'問題点 拡張子付き保存するも文字化け発生、元のマクロファイルが閉じてしまう
+'解決済み：使用済み最大行番号取得(起動時にconfシート選択で正しく取得)、パス名取得
+Sub CONF出力()
+    '★step1 confシート
+    Dim WB As Workbook 'ワークブック
+    Dim Sheet_conf As Worksheet
+    Dim Sheet_set As Worksheet
+    
+    'ブックをセット
+    Set WB = ThisWorkbook
+    '設定シートとconfシートをセット
+    Set Sheet_conf = ThisWorkbook.Worksheets("conf")
+    Set Sheet_set = ThisWorkbook.Worksheets("設定")
+    '起動時にconfシートが選択されるようにする　これにより最終行番号を正しく取得
+    Sheet_conf.Activate
+    
+    'もっとも幅の広いセルに合わせ列の幅を自動調整
+    Sheet_conf.Range("B1:C1").EntireColumn.AutoFit
+    Dim saveFileName As String '保存ファイル名
+    Dim saveFolder As String '保存場所パス
+    'confシートのC1セルから保存ファイル名を取得
+    saveFileName = Sheet_conf.Range("C1").Value
+    '設定シートのB1セルから保存場所を取得
+    saveFolder = Sheet_set.Range("B1").Value
+    
+    '★step2 confシートのデータの読み込み ※B1セルを除く
+    '★step2-1 列の使用済みセルの最大行番号を求める処理に用いる変数宣言
+    '----- シートのセルを縦方向に見た場合　使用済みセルの最大行番号を求める
+    '列の最終行を取得する必要がある
+    ' B列の最終行を取得
+    Dim endRow As Long
+    ' B1セルを起点として最終行番号を取得
+    endRow = Range("B1").End(xlDown).Row 'B列を下に向かって見てどこまで使用済みか　※C列も同じ数
+    MsgBox ("B列の最終行番号" & endRow)
+    
+    'B列のデータ数
+    Dim countRow_B As Integer '行数数える
+    '見出し1行を除外したセル範囲B列選択
+    Sheet_conf.Range("B1").Resize(Range("B1").CurrentRegion.Rows.Count - 1, Range("B1").Columns.Count).Offset(1, 0).Select
+    countRow_B = Application.WorksheetFunction.CountA(Sheet_conf.Columns(2)) 'セル範囲の行数を数える
+    MsgBox ("B列データ行数は" & countRow_B - 1) '←データ行数を取得
+    
+    'C列のデータ数
+    Dim countRow_C As Integer '行数数える
+    '見出し1行を除外したセル範囲C列選択
+    Sheet_conf.Range("C1").Resize(Range("C1").CurrentRegion.Rows.Count - 1, Range("C1").Columns.Count).Offset(1, 0).Select
+    countRow_C = Application.WorksheetFunction.CountA(Sheet_conf.Columns(3))  'セル範囲の行数を数える
+    MsgBox ("C列データ行数は" & countRow_C - 1) '←データ行数を取得
+    
+    'データ欠落チェック B列とC列のデータ行数が一致すれば欠落なし
+    If countRow_B - 1 = countRow_C - 1 Then
+        MsgBox ("データ欠落なし")
+    Else
+        MsgBox ("データ欠落あり")
+    End If
+    
+    '★step3 confシートのデータの読み込みとファイル出力
+    '★step3-1　フォルダ名とファイル名をセルから取得
+    '保存フォルダ名のチェック
+    If Not IsNull(saveFolder) Then  '出力ファイルが指定された場合
+        MsgBox ("フォルダ名" & saveFolder & "を確認しました")
+    Else '未入力またはキャンセル時
+        Application.Goto Sheet_set.Range("B1"), True  '設定シートB1セルにカーソルが合っている状態
+        MsgBox ("設定シートのB1セルに保存フォルダ名が入力されていません"), vbCritical  '警告メッセージアイコン"
+        Exit Sub
+    End If
+    
+    '保存ファイル名のチェック
+    If Not IsNull(saveFileName) Then  '出力ファイルが指定された場合
+        MsgBox ("ファイル名" & saveFileName & "を確認しました")
+    Else '未入力またはキャンセル時
+        Application.Goto Sheet_conf.Range("C1"), True  'confシートC1セルにカーソルが合っている状態
+        MsgBox ("confシートのB1セルに保存シート名が入力されていません"), vbCritical  '警告メッセージアイコン
+        Exit Sub
+    End If
+    
+    '★step3-2　ファイル書き込み工程(拡張子指定)
+    'B列とC列のデータをカンマで区切って、行ごとに出力する
+'----- 上述のconfファイルをファイル番号FileNumとして開く
+'----- ファイル出力においてOSでファイルを一元管理するための仕組み　ファイルを扱う際にファイル番号が他と重複しないようにFreeFile関数を使うことで未使用番号(空ファイル番号)を自動で取得する
+    '★空のファイル番号取得
+    Dim FileNum As Long
+    FileNum = FreeFile
+    
+    'ファイル書き込みより前にファイル名など指定
+    '保存パス全体を文字列結合で作成 '_td_agentまで含めたファイル名にする
+    saveFileName = saveFileName & "_td_agent"
+    '保存パス全体 拡張子も文字列結合
+    savepath = saveFolder & "\" & saveFileName & ".conf"
+    
+    '*** 書き込み工程 開始*** ◆◆◆
+    Open saveFileName For Output As #FileNum
+    'どうやったらB列とC列のデータを分割した状態で出力できるか
+    Dim CellValB As String
+    Dim CellValC As String
+    'データの範囲
+    For i = 2 To (countRow_B - 1) '行ごとに処理 '1行目はファイル名のため除外 2行目からデータ範囲まで C列も同じ回数なので割愛
+        CellValB = Sheet_conf.Cells(i, 2).Value '2列目のデータ
+        CellValC = Sheet_conf.Cells(i, 3).Value '3列目のデータ
+        'B列とC列のデータをスペースで区切って出力
+        Print #FileNum, CellValB & " " & CellValC
+    Next i
+    Close #FileNum
+    '*** 書き込み工程 終了*** ◆◆◆
+    
+    '★step3-3　名前を付けて保存ダイアログボックスを使わないファイル保存
+    Dim filePath As String 'ファイルパス     'Dim saveFileName As String '保存ファイル名 Dim saveFolder As String '保存場所パス
+    filePath = saveFileName 'ファイルパスは出力するファイルのもの
+    ThisWorkbook.SaveAs Filename:=savepath
+    
+    '★未解決　文字化け対策・元のマクロファイルが閉じてしまう
+    
+    '★保存先フォルダの確認
+    '保存したフォルダの取得
+    Dim save As String
+    save = InStrRev(savepath, "\") 'InStrRev関数は、指定文字"\"を文字列filePathの後ろから先頭に向けて検索し見つかった位置を返す。
+    saveFolder = Left(savepath, save - 1)
+    '保存したフォルダを開く
+    CreateObject("WScript.Shell").Run saveFolder
+End Sub
