@@ -85,8 +85,7 @@ Sub CONF出力()
     savepath = saveFolder & "\" & saveFileName & ".conf" 'フォルダ名\ファイル名_td_agent.conf として保存
 
     '★step3-3　ファイル書き込み工程(拡張子指定)
-    '考察：空ファイル番号取得より前に保存パスを書くと文字化けしない
-    '→おそらく保存パスが設定されていないとみなされた可能性
+    '文字化け考察：二重に書き込みされるような状態になっていたため
     '空のファイル番号取得
     Dim FileNum As Long
     FileNum = FreeFile
