@@ -36,8 +36,10 @@ Sub CONF出力()
 
     Dim countRow_B As Integer '行数数える
     '見出し1行を除外したセル範囲B列選択
+　　'https://vbanobuhinko.com/%E8%A6%8B%E5%87%BA%E3%81%97%E3%82%92%E9%99%A4%E5%A4%96%E3%81%97%E3%81%9F%E3%83%87%E3%83%BC%E3%82%BF%E7%AF%84%E5%9B%B2%E9%81%B8%E6%8A%9E/
     Sheet_conf.Range("B1").Resize(Range("B1").CurrentRegion.Rows.Count - 1, Range("B1").Columns.Count).Offset(1, 0).Select
-    countRow_B = Application.WorksheetFunction.CountA(Sheet_conf.Columns(2)) 'セル範囲の行数を数える
+    
+　　countRow_B = Application.WorksheetFunction.CountA(Sheet_conf.Columns(2)) 'セル範囲の行数を数える
     MsgBox ("B列データ行数は" & countRow_B - 1) '←データ行数を取得
 
     '----------------------------------------------------------------------------------------------------
