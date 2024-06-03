@@ -4,6 +4,18 @@
 'match・serverタグ内の@type forwardの出力位置 →NG
 
 'サンプル
+'<source>
+'  @type windows_eventlog2
+'  channels Application
+'  read_existing_events False
+'  Tag windows68.app
+'  <storage>
+'    @type local
+'    persistent True
+'    path C:/opt/td-agent/log/app
+'  </storage>
+'</source>
+
 '<match windows68.app> ※このappの部分がsys、set、secの場合もある
 '  @type forward
 '  <server>
@@ -12,6 +24,18 @@
 '</match>
 
 '現在
+'<source>
+'  @type windows_eventlog2
+'  channels Application
+'  read_existing_events False
+'  Tag windows68.app
+'  <storage>
+'    @type local
+'    persistent True
+'    path C:/opt/td-agent/log/app
+'  </storage>
+'</source>
+
 '<match windows68.app> ※このappの部分がsys、set、secの場合もある
 '  <server>
 '  @type forward '←出力位置が間違い
