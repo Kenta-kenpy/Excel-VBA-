@@ -1,19 +1,20 @@
+'source・storageタグ書込み、インデント、空行、matchタグの変則タグ書込み・(スペース部分をSpace関数表記)→OK
+'source・storageタグ内の@typeの行の出力 →OK
+'matchタグの<match windows68.app>などのwindows68.app部分の出力 →OK
+'match・serverタグ内の@type forwardの出力位置 →NG
+
 'サンプル
-'<source>
-'  @type windows_eventlog2
-'  channels Application
-'  read_existg_events False
-'  tag windows68.app
-'  <storage>
-'    @type local
-'    persistent True
-'    path C:/opt/td-agent/log/app
-'  </storage>
-'</source>
-'
 '<match windows68.app> ※このappの部分がsys、set、secの場合もある
 '  @type forward
 '  <server>
+'    host 192.168.10.45
+'  </server>
+'</match>
+
+'現在
+'<match windows68.app> ※このappの部分がsys、set、secの場合もある
+'  <server>
+'  @type forward '←出力位置が間違い
 '    host 192.168.10.45
 '  </server>
 '</match>
@@ -121,9 +122,9 @@ Sub CONF出力()
         'String関数の構文:String(length, character) 、lengthは生成する文字列の長さを指定しCharacterは繰り返される文字を指定。
         'Sheet_conf.Cells(i, 1).Valueが length に相当し、A 列の値の数だけスペースを生成される。
         Dim Ind As String
-        Ind = String(CellValA, " ") 'インデント生成
+        Ind = String(CellValA, Space(1)) 'インデント生成
         '****************************************************************************************************
-        '★step3-4-2  @で始まる文字列がセルにある場合&matchで始まるHTMLタグを挿入　※未解決
+        '★@で始まる文字列がセルにある場合&matchで始まるHTMLタグを挿入　※未解決
         '特定文字列を含むかどうか InStr関数
         'InStr(検索対象,"キーワード")→検索対象がキーワードを含む場合
         'https://yaromai.jp/include-string/#:~:text=VBA%E3%81%A7%E3%81%AFInstr%E9%96%A2%E6%95%B0%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E6%96%87%E5%AD%97%E5%88%97%E3%82%92%E5%90%AB%E3%82%80%E3%81%8B%E5%88%A4%E5%AE%9A%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99%E3%80%82%20Sub%20InstrSample1%28%29%20Const%20str%20As%20String%20%3D,Then%20MsgBox%20%22str%E3%81%AF%E3%82%A2%E3%82%92%E5%90%AB%E3%82%80%22%20End%20Sub%20%E4%B8%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%81%AE%E3%82%88%E3%81%86%E3%81%AB%E3%80%81InStr%20%3E%200%E3%81%A8%E6%AF%94%E8%BC%83%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%A7%E3%80%8C%E7%89%B9%E5%AE%9A%E3%81%AE%E6%96%87%E5%AD%97%E5%88%97%E3%80%8D%E3%82%92%E5%90%AB%E3%82%80%E3%81%8B%E3%82%92%E5%88%A4%E5%AE%9A%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%8C%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99%E3%80%82
@@ -133,8 +134,7 @@ Sub CONF出力()
         'Booleanフラグ
         'https://excel-ubara.com/excelvba4/EXCEL_VBA_465.html
         
-        'B列の値で判断する
-        'セルの値について判断
+        '★step3-4-2　B列の値で判断する(セルの値について判断)
         'もしB列が"@type"の場合
         If CellValB = "@type" Then
         'sourceタグの範囲↓*************************************************************
@@ -147,11 +147,11 @@ Sub CONF出力()
             'もしB列が"channels"、"read_existing_events"、"tag"の場合
             ElseIf CellValB = "channels" Or CellValB = "read_existing_events" Or CellValB = "tag" Then
                 'B列とC列のデータをインデントとともに出力
-                Print #FileNum, Ind & CellValB & " " & CellValC
+                Print #FileNum, Ind & CellValB & Space(1) & CellValC
             'storageタグの範囲↓********************************************************
                 'もしB列が"tag"かつ下のセルの値が"@type"の場合
                 If CellValB = "tag" And Sheet_conf.Cells(i + 1, 2).Value = "@type" Then
-                    Print #FileNum, "  <storage>" 'storageタグ開始 'タグインデントをスペースで再現
+                    Print #FileNum, Space(2) & "<storage>" 'storageタグ開始 'タグインデントをスペースで再現
                     Instorage = True '開始段階でTrueになる
                 End If
             
@@ -159,14 +159,14 @@ Sub CONF出力()
             'もしB列が"persistent"の場合
             ElseIf CellValB = "persistent" Then
                 'B列とC列のデータをインデントとともに出力
-                Print #FileNum, Ind & CellValB & " " & CellValC
+                Print #FileNum, Ind & CellValB & Space(1) & CellValC
                 
             'もしB列が"path"の場合
             ElseIf CellValB = "path" Then
                 'B列とC列のデータをインデントとともに出力
-                Print #FileNum, Ind & CellValB & " " & CellValC
+                Print #FileNum, Ind & CellValB & Space(1) & CellValC
                 If Instorage Then 'もし<storage>タグの中の場合
-                    Print #FileNum, "  </storage>"  'storageタグ閉じる
+                    Print #FileNum, Space(2) & "</storage>" 'storageタグ閉じる
                     Instorage = False '閉じた段階でFalseになる
                 End If
                 
@@ -179,7 +179,7 @@ Sub CONF出力()
             'タグの内側かについて判断
             If Insource Then ' もし <source> タグの中の場合
                 If Instorage Then ' もし<storage> タグの中の場合
-                    Print #FileNum, " </storage>"  'storageタグ閉じる
+                    Print #FileNum, Space(1) & "</storage>"  'storageタグ閉じる
                     Instorage = False  '閉じた段階でFalseになる
                 End If
                 Print #FileNum, "</source>"  'sourceタグ閉じる
@@ -196,33 +196,42 @@ Sub CONF出力()
         If CellValB = "@type" And Sheet_conf.Cells(i + 1, 2).Value = "host" Then
              'serverタグ
             If i = 30 Then
-                Print #FileNum, "<match" & " windows68.app" & ">" 'matchタグ開始
+                Print #FileNum, "<match" & Space(1) & "windows68.app" & ">" 'matchタグ開始
             End If
             If i = 32 Then
-                Print #FileNum, "<match" & " windows68.sys" & ">" 'matchタグ開始
+                Print #FileNum, "<match" & Space(1) & "windows68.sys" & ">" 'matchタグ開始
             End If
             If i = 34 Then
-                Print #FileNum, "<match" & " windows68.set" & ">" 'matchタグ開始
+                Print #FileNum, "<match" & Space(1) & "windows68.set" & ">" 'matchタグ開始
             End If
             If i = 36 Then
-                Print #FileNum, "<match" & " windows68.sec" & ">" 'matchタグ開始
+                Print #FileNum, "<match" & Space(1) & "windows68.sec" & ">" 'matchタグ開始
             End If
+            
             'serverタグ
-            Print #FileNum, "  <server>" 'serverタグ開始  タグインデントをスペースで再現
+            Print #FileNum, Space(2) & "<server>" 'serverタグ開始  タグインデントをスペースで再現
         End If
         
+        'B列のセルの値に"@"を含むものがある場合
+        'InStr(検索対象,"キーワード")→検索対象がキーワードを含む場合
+        If InStr(CellValB, "@") Then
+            'B列とC列のデータをインデントとともに出力
+            Print #FileNum, Ind & CellValB & Space(1) & CellValC
+        End If
         
         '〇match-serverタグの中のデータ
         'B列の値がhostの場合
         If CellValB = "host" Then
             'B列とC列のデータをインデントとともに出力
-            Print #FileNum, Ind & CellValB & " " & CellValC
+            Print #FileNum, Ind & CellValB & Space(1) & CellValC
             'セルの値を出力してserverタグ・matchタグを閉じる
-            Print #FileNum, "  </server>" 'serverタグ閉じる　タグインデントをスペースで再現
+            Print #FileNum, Space(2) & "</server>" 'serverタグ閉じる　タグインデントをスペースで再現
             Print #FileNum, "</match>" 'matchタグ閉じる
             Print #FileNum, ""  '空行 (match-serverタグのブロックごとに空行を空ける)
         End If
         'matchタグの範囲↑**************************************************************
+        
+        
 
      Next i  'データ範囲の行を進める
 
