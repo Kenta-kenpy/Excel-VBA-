@@ -1,0 +1,237 @@
+'サンプル
+'<source>
+'  @type windows_eventlog2
+'  channels Application
+'  read_existg_events False
+'  tag windows68.app
+'  <storage>
+'    @type local
+'    persistent True
+'    path C:/opt/td-agent/log/app
+'  </storage>
+'</source>
+'
+'<match windows68.app> ※このappの部分がsys、set、secの場合もある
+'  @type forward
+'  <server>
+'    host 192.168.10.45
+'  </server>
+'</match>
+
+Sub CONF出力()
+    '★step1 confシート・設定シート準備
+    Dim Sheet_conf As Worksheet
+    Dim Sheet_set As Worksheet
+    
+    'confシート・設定シートをセット
+    Set Sheet_conf = ThisWorkbook.Worksheets("conf")
+    Set Sheet_set = ThisWorkbook.Worksheets("設定")
+    '起動時にconfシートが選択されるようにする
+    Sheet_conf.Activate
+    
+    '列の幅を自動調整
+    Sheet_conf.Range("B1:C1").EntireColumn.AutoFit
+    Dim saveFileName As String '保存ファイル名
+    Dim saveFolder As String '保存場所パス
+    'confシートのC1セルから保存ファイル名を取得
+    saveFileName = Sheet_conf.Range("C1").Value
+    '設定シートのB1セルから保存場所を取得
+    saveFolder = Sheet_set.Range("B1").Value
+    '----------------------------------------------------------------------------------------------------
+
+    '★step2 confシートのデータの読み込み ※B1セルを除く
+    '★列の使用済みセルの最大行番号を求める処理に用いる変数宣言
+    '----- シートのセルを縦方向に見た場合　使用済みセルの最大行番号を求める
+    '列の最終行を取得する必要がある
+    ' B列の最終行を取得
+    Dim endRow As Long
+    ' B1セルを起点として最終行番号を取得(下に向かって)
+    endRow = Sheet_conf.Range("B1").End(xlDown).Row
+    MsgBox ("B列の最終行番号" & endRow)
+
+    Dim countRow_B As Integer '行数数える
+    '見出し1行を除外したセル範囲B列選択
+    'https://vbanobuhinko.com/%E8%A6%8B%E5%87%BA%E3%81%97%E3%82%92%E9%99%A4%E5%A4%96%E3%81%97%E3%81%9F%E3%83%87%E3%83%BC%E3%82%BF%E7%AF%84%E5%9B%B2%E9%81%B8%E6%8A%9E/
+    Sheet_conf.Range("B1").Resize(Range("B1").CurrentRegion.Rows.Count - 1, Range("B1").Columns.Count).Offset(1, 0).Select
+    
+    countRow_B = Application.WorksheetFunction.CountA(Sheet_conf.Columns(2)) 'シート2列目(B列)のデータ範囲の行数を数える
+    MsgBox ("B列データ行数は" & countRow_B - 1) '←データ行数を取得
+
+    '----------------------------------------------------------------------------------------------------
+
+    '★step3 confシートのデータの読み込みとファイル出力
+    '★step3-1　フォルダ名とファイル名をセルから取得
+    '保存フォルダ名のチェック
+    If Not IsNull(saveFolder) Then  '出力ファイルが指定された場合
+        MsgBox ("フォルダ名" & saveFolder & "を確認しました")
+    Else '未入力またはキャンセル時
+        Application.Goto Sheet_set.Range("B1"), True  '設定シートB1セルにカーソルが合っている状態
+        MsgBox ("設定シートのB1セルに保存フォルダ名が入力されていません"), vbCritical  '警告メッセージアイコン"
+        Exit Sub
+    End If
+    
+    '保存ファイル名のチェック
+    If Not IsNull(saveFileName) Then  '出力ファイルが指定された場合
+        MsgBox ("ファイル名" & saveFileName & "を確認しました")
+    Else '未入力またはキャンセル時
+        Application.Goto Sheet_conf.Range("C1"), True  'confシートC1セルにカーソルが合っている状態
+        MsgBox ("confシートのB1セルに保存シート名が入力されていません"), vbCritical  '警告メッセージアイコン
+        Exit Sub
+    End If
+    '----------------------------------------------------------------------------------------------------
+
+    '★step3-2　名前を付けて保存ダイアログボックスを使わないファイル保存
+    'ファイル書き込みより前にファイル名など指定
+    '保存パス全体を文字列結合で作成 '_td_agentまで含めたファイル名にする
+    saveFileName = saveFileName & "_td_agent"
+    Dim savepath As String
+    '保存パス全体 拡張子も文字列結合
+    savepath = saveFolder & "\" & saveFileName & ".conf" 'フォルダ名\ファイル名_td_agent.conf として保存
+    '----------------------------------------------------------------------------------------------------
+
+    '★step3-3 空のファイル番号取得
+    Dim FileNum As Long
+    FileNum = FreeFile
+    
+    'セルの値
+    Dim CellValA As String 'A列の値(インデント)
+    Dim CellValB As String 'B列の値
+    Dim CellValC As String 'C列の値
+    
+    'タグの内側にいるか判定するBooleanフラグ
+    Dim Insource As Boolean ' <source>タグの内側かどうか
+    Dim Instorage As Boolean ' <storage>タグの内側かどうか
+    'フラグの初期値
+    Insource = False
+    Instorage = False
+    
+    Dim i As Integer
+    '----------------------------------------------------------------------------------------------------
+    '★step3-4　ファイル書き込み工程
+    '*** 書き込み工程 開始*** ◆◆◆
+    'ファイルを開く
+    Open savepath For Output As #FileNum
+        
+     For i = 2 To endRow '2行目からデータ範囲まで
+        CellValA = Sheet_conf.Cells(i, 1).Value 'A列の値(インデント)
+        CellValB = Sheet_conf.Cells(i, 2).Value 'B列の値
+        CellValC = Sheet_conf.Cells(i, 3).Value 'C列の値
+        
+        '★step3-4-1　A列の値を取得してインデントの挿入　        'https://officedic.com/excel-vba-howto-stringfunction/
+        'String関数の構文:String(length, character) 、lengthは生成する文字列の長さを指定しCharacterは繰り返される文字を指定。
+        'Sheet_conf.Cells(i, 1).Valueが length に相当し、A 列の値の数だけスペースを生成される。
+        Dim Ind As String
+        Ind = String(CellValA, " ") 'インデント生成
+        '****************************************************************************************************
+        '★step3-4-2  @で始まる文字列がセルにある場合&matchで始まるHTMLタグを挿入　※未解決
+        '特定文字列を含むかどうか InStr関数
+        'InStr(検索対象,"キーワード")→検索対象がキーワードを含む場合
+        'https://yaromai.jp/include-string/#:~:text=VBA%E3%81%A7%E3%81%AFInstr%E9%96%A2%E6%95%B0%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E6%96%87%E5%AD%97%E5%88%97%E3%82%92%E5%90%AB%E3%82%80%E3%81%8B%E5%88%A4%E5%AE%9A%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99%E3%80%82%20Sub%20InstrSample1%28%29%20Const%20str%20As%20String%20%3D,Then%20MsgBox%20%22str%E3%81%AF%E3%82%A2%E3%82%92%E5%90%AB%E3%82%80%22%20End%20Sub%20%E4%B8%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%81%AE%E3%82%88%E3%81%86%E3%81%AB%E3%80%81InStr%20%3E%200%E3%81%A8%E6%AF%94%E8%BC%83%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%A7%E3%80%8C%E7%89%B9%E5%AE%9A%E3%81%AE%E6%96%87%E5%AD%97%E5%88%97%E3%80%8D%E3%82%92%E5%90%AB%E3%82%80%E3%81%8B%E3%82%92%E5%88%A4%E5%AE%9A%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%8C%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99%E3%80%82
+        'https://daitaideit.com/vba-char-instr/
+        'タグによってA列で指定した数の分インデントする内容の開始位置について space関数を使用
+        'http://www.officetanaka.net/excel/vba/function/Space.htm
+        'Booleanフラグ
+        'https://excel-ubara.com/excelvba4/EXCEL_VBA_465.html
+        
+        'B列の値で判断する
+        'セルの値について判断
+        'もしB列が"@type"の場合
+        If CellValB = "@type" Then
+        'sourceタグの範囲↓*************************************************************
+            'もしB列の下のセル値が"channels"の場合
+            If Sheet_conf.Cells(i + 1, 2).Value = "channels" Then
+              Print #FileNum, "<source>"  'sourceタグ開始
+            End If
+            
+            'B列のセルの値について判断
+            'もしB列が"channels"、"read_existing_events"、"tag"の場合
+            ElseIf CellValB = "channels" Or CellValB = "read_existing_events" Or CellValB = "tag" Then
+                'B列とC列のデータをインデントとともに出力
+                Print #FileNum, Ind & CellValB & " " & CellValC
+            'storageタグの範囲↓********************************************************
+                'もしB列が"tag"かつ下のセルの値が"@type"の場合
+                If CellValB = "tag" And Sheet_conf.Cells(i + 1, 2).Value = "@type" Then
+                    Print #FileNum, "  <storage>" 'storageタグ開始 'タグインデントをスペースで再現
+                    Instorage = True '開始段階でTrueになる
+                End If
+            
+            '〇source-storageタグの中のデータ
+            'もしB列が"persistent"の場合
+            ElseIf CellValB = "persistent" Then
+                'B列とC列のデータをインデントとともに出力
+                Print #FileNum, Ind & CellValB & " " & CellValC
+                
+            'もしB列が"path"の場合
+            ElseIf CellValB = "path" Then
+                'B列とC列のデータをインデントとともに出力
+                Print #FileNum, Ind & CellValB & " " & CellValC
+                If Instorage Then 'もし<storage>タグの中の場合
+                    Print #FileNum, "  </storage>"  'storageタグ閉じる
+                    Instorage = False '閉じた段階でFalseになる
+                End If
+                
+            'storageタグの範囲↑*********************************************************
+        
+            Print #FileNum, "</source>"  'sourceタグ閉じる
+            Print #FileNum, ""  '空行
+            Insource = False '閉じた段階でFalseになる
+            
+            'タグの内側かについて判断
+            If Insource Then ' もし <source> タグの中の場合
+                If Instorage Then ' もし<storage> タグの中の場合
+                    Print #FileNum, " </storage>"  'storageタグ閉じる
+                    Instorage = False  '閉じた段階でFalseになる
+                End If
+                Print #FileNum, "</source>"  'sourceタグ閉じる
+                Print #FileNum, ""  '空行 (source-storageタグのブロックごとに空行を空ける)
+            End If
+        End If
+        'sourceタグの範囲↑*************************************************************
+
+        'matchタグの範囲↓**************************************************************
+        '※matchタグの右側の値について 4種類の異なる値のものがある windows68.app・windows68.sys・windows68.set・windows68.sec
+        '30/32/34/36行目のC列の値　4行分
+        'matchタグ
+        'もしB列のセル値が"@type"かつその下のセル値が"host"の場合
+        If CellValB = "@type" And Sheet_conf.Cells(i + 1, 2).Value = "host" Then
+             'serverタグ
+            If i = 30 Then
+                Print #FileNum, "<match" & " windows68.app" & ">" 'matchタグ開始
+            End If
+            If i = 32 Then
+                Print #FileNum, "<match" & " windows68.sys" & ">" 'matchタグ開始
+            End If
+            If i = 34 Then
+                Print #FileNum, "<match" & " windows68.set" & ">" 'matchタグ開始
+            End If
+            If i = 36 Then
+                Print #FileNum, "<match" & " windows68.sec" & ">" 'matchタグ開始
+            End If
+            'serverタグ
+            Print #FileNum, "  <server>" 'serverタグ開始  タグインデントをスペースで再現
+        End If
+        
+        
+        '〇match-serverタグの中のデータ
+        'B列の値がhostの場合
+        If CellValB = "host" Then
+            'B列とC列のデータをインデントとともに出力
+            Print #FileNum, Ind & CellValB & " " & CellValC
+            'セルの値を出力してserverタグ・matchタグを閉じる
+            Print #FileNum, "  </server>" 'serverタグ閉じる　タグインデントをスペースで再現
+            Print #FileNum, "</match>" 'matchタグ閉じる
+            Print #FileNum, ""  '空行 (match-serverタグのブロックごとに空行を空ける)
+        End If
+        'matchタグの範囲↑**************************************************************
+
+     Next i  'データ範囲の行を進める
+
+    Close #FileNum 'ファイルを閉じる
+    '*** 書き込み工程 終了*** ◆◆◆
+    
+    '保存先フォルダを開く
+    Dim save As String
+    save = InStrRev(savepath, "\")
+    saveFolder = Left(savepath, save - 1)
+    CreateObject("WScript.Shell").Run saveFolder
+End Sub
