@@ -26,7 +26,7 @@ Sub CONF出力()
     '設定シートのB1セルから保存場所を取得 変数にセット
     saveFolder = Sheet_set.Range("B1").Value
     
-    '保存フォルダ名が未入力の場合 異常終了させる(ファイル名を見る必要がない)
+    '保存フォルダ名が未入力の場合 異常終了させる
     If (saveFolder = "") Then
         '設定シートA1・B1セルにカーソルを合わせる
         Application.Goto Reference:=Sheet_set.Range("A1:B1"), Scroll:=True
@@ -37,16 +37,16 @@ Sub CONF出力()
     'confシートのC1セルから保存ファイル名を取得 変数にセット
     saveFileName = Sheet_conf.Range("C1").Value
     
-    '保存ファイル名が未入力の場合 異常終了させる(ファイル名を見る必要がない)
+    '保存ファイル名が未入力の場合 異常終了させる
     If (saveFileName = "") Then
         '設定シートB1・C1セルにカーソルを合わせる
         Application.Goto Reference:=Sheet_set.Range("B1:C1"), Scroll:=True
-        MsgBox ("confシートのC1セルの保存フォルダパスを確認してください"), vbCritical '警告メッセージアイコン
+        MsgBox ("confシートのC1セルの保存ファイル名を確認してください"), vbCritical '警告メッセージアイコン
         Exit Sub  '抜ける
     End If
     
-    MsgBox ("フォルダ名 " & saveFolder & "を確認しました" & vbCrLf & _
-                "ファイル名 " & saveFileName & "を確認しました"), vbInformation '情報メッセージアイコン
+    MsgBox ("フォルダ名 " & saveFolder & " を確認しました" & vbCrLf & _
+                "ファイル名 " & saveFileName & " を確認しました"), vbInformation '情報メッセージアイコン
     
     '----------------------------------------------------------------------------------------------------
     '★step1-3　名前を付けて保存ダイアログボックスを使わないファイル保存
