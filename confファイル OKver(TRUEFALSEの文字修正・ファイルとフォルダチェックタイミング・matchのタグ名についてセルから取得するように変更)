@@ -1,3 +1,4 @@
+'Module1を修正　修正ポイント
 '済・TRUE/FALSEをtrue/falseに修正 セルの書式設定→文字列を選択
 '済・ファイルとフォルダのチェックのタイミング・・・シートのセルから値をとってくるときに同時に行う
 '済・matchタグについて
@@ -38,16 +39,15 @@ Sub CONF出力()
     
     '列の幅を自動調整
     Sheet_conf.Range("B1:C1").EntireColumn.AutoFit
+
+    '★フォルダ名とファイル名をセルから取得
     Dim saveFileName As String '保存ファイル名
     Dim saveFolder As String '保存場所パス
-    'confシートのC1セルから保存ファイル名を取得
-    saveFileName = Sheet_conf.Range("C1").Value
-    '設定シートのB1セルから保存場所を取得
-    saveFolder = Sheet_set.Range("B1").Value
     
-    '★フォルダ名とファイル名をセルから取得
     '保存フォルダ名のチェック
     If Not IsNull(saveFolder) Then  '出力ファイルが指定された場合
+        '設定シートのB1セルから保存場所を取得
+        saveFolder = Sheet_set.Range("B1").Value
         MsgBox ("フォルダ名" & saveFolder & "を確認しました")
     Else '未入力またはキャンセル時
         Application.Goto Sheet_set.Range("B1"), True  '設定シートB1セルにカーソルが合っている状態
@@ -57,6 +57,8 @@ Sub CONF出力()
     
     '保存ファイル名のチェック
     If Not IsNull(saveFileName) Then  '出力ファイルが指定された場合
+        'confシートのC1セルから保存ファイル名を取得
+        saveFileName = Sheet_conf.Range("C1").Value
         MsgBox ("ファイル名" & saveFileName & "を確認しました")
     Else '未入力またはキャンセル時
         Application.Goto Sheet_conf.Range("C1"), True  'confシートC1セルにカーソルが合っている状態
