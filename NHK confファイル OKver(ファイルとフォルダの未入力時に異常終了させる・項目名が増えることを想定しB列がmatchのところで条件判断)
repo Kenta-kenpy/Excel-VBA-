@@ -1,7 +1,7 @@
 '修正
 '・matchタグについて　タグ名をセルからとってくる　項目名が増えることを想定しB列がmatchのところで条件判断
-'・ファイルとフォルダのチェックのタイミング・・・シートのセルから値をとってくるときに同時に行う
 '・ファイル名とフォルダ名が未入力時にそのセルまでジャンプする機能の修正
+'・保存フォルダ名が未入力ならファイル名を見る必要がなく異常終了
 
 Sub CONF出力()
     '★step1 confシート・設定シート準備
@@ -28,16 +28,16 @@ Sub CONF出力()
     'confシートのC1セルから保存ファイル名を取得 変数にセット
     saveFileName = Sheet_conf.Range("C1").Value
     
-    '保存フォルダ名と保存ファイル名が未入力の場合 異常終了させる
-    '※両方の場合を優先して書く cf.)FizzBuzz
-    If (saveFolder = "" Or saveFileName = "") Then
-        MsgBox ("設定シートのB1セルの保存フォルダパス　または" & vbCrLf & _
-        "confシートのC1セルに保存ファイル名を確認してください"), vbCritical '警告メッセージアイコン　'※_はメッセージボックスでの改行記号
+    '保存フォルダ名が未入力の場合 異常終了させる(ファイル名を見る必要がない)
+    If (saveFolder = "") Then
+        MsgBox ("設定シートのB1セルの保存フォルダパスを確認してください"), vbCritical '警告メッセージアイコン
+        '設定シートA1・B1セルにカーソルを合わせる
+        Application.Goto Reference:=Sheet_set.Range("A1:B1"), Scroll:=True
         Exit Sub  '抜ける
     '保存フォルダ名と保存ファイル名が指定された場合
     ElseIf Not IsEmpty(saveFolder & saveFileName) Then
-        MsgBox ("フォルダ名 " & saveFolder & "を確認しました" & vbCrLf & _
-                "ファイル名 " & saveFileName & "を確認しました"), vbInformation '情報メッセージアイコン
+        MsgBox ("フォルダ名 " & saveFolder & vbCrLf & _
+                "ファイル名 " & saveFileName), vbInformation  '情報メッセージアイコン
     End If
     '----------------------------------------------------------------------------------------------------
     '★step1-3　名前を付けて保存ダイアログボックスを使わないファイル保存
