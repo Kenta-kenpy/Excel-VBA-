@@ -40,11 +40,12 @@ Sub CONF出力()
     '保存ファイル名が未入力の場合 異常終了させる
     If (saveFileName = "") Then
         '設定シートB1・C1セルにカーソルを合わせる
-        Application.Goto Reference:=Sheet_set.Range("B1:C1"), Scroll:=True
+        Application.Goto Reference:=Sheet_conf.Range("B1:C1"), Scroll:=True
         MsgBox ("confシートのC1セルの保存ファイル名を確認してください"), vbCritical '警告メッセージアイコン
         Exit Sub  '抜ける
     End If
     
+    '保存フォルダ名と保存ファイル名が入力されていることが確認できた
     MsgBox ("フォルダ名 " & saveFolder & " を確認しました" & vbCrLf & _
                 "ファイル名 " & saveFileName & " を確認しました"), vbInformation '情報メッセージアイコン
     
