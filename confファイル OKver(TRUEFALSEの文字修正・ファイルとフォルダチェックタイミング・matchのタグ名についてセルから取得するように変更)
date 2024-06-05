@@ -6,12 +6,33 @@
 '・ファイルとフォルダのチェックのタイミング・・・シートのセルから値をとってくるときに同時に行う
 '・ファイル名とフォルダ名が未入力時にそのセルまでジャンプする機能の修正
 
+'サンプル
+'<source>
+'  @type windows_eventlog2
+'  channels Application
+'  read_existing_events False
+'  Tag windows68.app
+'  <storage>
+'    @type local
+'    persistent True
+'    path C:/opt/td-agent/log/app
+'  </storage>
+'</source>
+'
+'<match windows68.app> ※このappの部分がsys、set、secの場合もある
+'  @type forward
+'  <server>
+'    host 192.168.10.45
+'  </server>
+'</match>
+
 Sub CONF出力()
     '★step1 confシート・設定シート準備
     Dim Sheet_conf As Worksheet
     Dim Sheet_set As Worksheet
     
-    '★step1-1 confシート・設定シートをセット
+    '★準備
+    'confシート・設定シートをセット
     Set Sheet_conf = ThisWorkbook.Worksheets("conf")
     Set Sheet_set = ThisWorkbook.Worksheets("設定")
     '起動時にconfシートが選択されるようにする
@@ -19,49 +40,32 @@ Sub CONF出力()
     
     '列の幅を自動調整
     Sheet_conf.Range("B1:C1").EntireColumn.AutoFit
-    Sheet_set.Range("A1:B1").EntireColumn.AutoFit
-    '----------------------------------------------------------------------------------------------------
-    '★step1-2 フォルダ名とファイル名をセルから取得
-    Dim saveFolder As String '保存場所パス
+
+    '★フォルダ名とファイル名をセルから取得
     Dim saveFileName As String '保存ファイル名
+    Dim saveFolder As String '保存場所パス
     
-    '保存フォルダ名と保存ファイル名が入力された場合
-    '設定シートのB1セルから保存場所を取得 変数にセット
-    saveFolder = Sheet_set.Range("B1").Value
-    'confシートのC1セルから保存ファイル名を取得 変数にセット
-    saveFileName = Sheet_conf.Range("C1").Value
-    
-    '保存フォルダ名と保存ファイル名両方が未入力の場合
-    '※両方の場合を優先して書く cf.)FizzBuzz
-    If (saveFolder = "" And saveFileName = "") Then
-        MsgBox ("設定シートのB1セルに保存フォルダパスが入力されていません" & vbCrLf & _
-        "confシートのC1セルに保存ファイル名が入力されていません"), vbCritical '警告メッセージアイコン　'※_はメッセージボックスでの改行記号
-        Exit Sub  '抜ける
-    '保存フォルダ名と保存ファイル名どちらかが未入力の場合
-    ElseIf (saveFolder = "") Then 'パス名が無効ですの実行時エラー発生のため On Error Resume Nextで回避
-        On Error Resume Next 'エラー無視で続行
-        '設定シートB1セルにカーソルが合っている状態 https://jizilog.com/vba-celljumpgoto
-        Application.Goto Reference:=Sheet_set.Range("B1"), Scroll:=True
-        MsgBox ("設定シートのB1セルに保存フォルダパスが入力されていません"), vbCritical '警告メッセージアイコン
-        Exit Sub  '抜ける
-    ElseIf (saveFileName = "") Then
-        'confシートC1セルにカーソルが合っている状態
-        Application.Goto Reference:=Sheet_conf.Range("C1"), Scroll:=True
-        MsgBox ("confシートのC1セルに保存ファイル名が入力されていません"), vbCritical '警告メッセージアイコン
-        Exit Sub  '抜ける
-    '保存フォルダ名と保存ファイル名が指定された場合
-    ElseIf Not IsEmpty(saveFolder & saveFileName) Then
-        MsgBox ("フォルダ名 " & saveFolder & "を確認しました" & vbCrLf & _
-                "ファイル名 " & saveFileName & "を確認しました"), vbInformation '情報メッセージアイコン
+    '保存フォルダ名のチェック
+    If Not IsNull(saveFolder) Then  '出力ファイルが指定された場合
+        '設定シートのB1セルから保存場所を取得
+        saveFolder = Sheet_set.Range("B1").Value
+        MsgBox ("フォルダ名" & saveFolder & "を確認しました")
+    Else '未入力またはキャンセル時
+        Application.Goto Sheet_set.Range("B1"), True  '設定シートB1セルにカーソルが合っている状態
+        MsgBox ("設定シートのB1セルに保存フォルダ名が入力されていません"), vbCritical  '警告メッセージアイコン"
+        Exit Sub
     End If
-    '----------------------------------------------------------------------------------------------------
-    '★step1-3　名前を付けて保存ダイアログボックスを使わないファイル保存
-    'ファイル書き込みより前にファイル名など指定
-    '保存パス全体を文字列結合で作成 '_td_agentまで含めたファイル名にする
-    saveFileName = saveFileName & "_td_agent"
-    Dim savepath As String
-    '保存パス全体 拡張子も文字列結合
-    savepath = saveFolder & "\" & saveFileName & ".conf" 'フォルダ名\ファイル名_td_agent.conf として保存
+    
+    '保存ファイル名のチェック
+    If Not IsNull(saveFileName) Then  '出力ファイルが指定された場合
+        'confシートのC1セルから保存ファイル名を取得
+        saveFileName = Sheet_conf.Range("C1").Value
+        MsgBox ("ファイル名" & saveFileName & "を確認しました")
+    Else '未入力またはキャンセル時
+        Application.Goto Sheet_conf.Range("C1"), True  'confシートC1セルにカーソルが合っている状態
+        MsgBox ("confシートのB1セルに保存シート名が入力されていません"), vbCritical  '警告メッセージアイコン
+        Exit Sub
+    End If
     
     '----------------------------------------------------------------------------------------------------
 
@@ -86,8 +90,15 @@ Sub CONF出力()
     '----------------------------------------------------------------------------------------------------
 
     '★step3 confシートのデータの読み込みとファイル出力
-    '★step3-1　ファイル番号と変数の準備
-    '空のファイル番号取得
+    '★step3-1　名前を付けて保存ダイアログボックスを使わないファイル保存
+    'ファイル書き込みより前にファイル名など指定
+    '保存パス全体を文字列結合で作成 '_td_agentまで含めたファイル名にする
+    saveFileName = saveFileName & "_td_agent"
+    Dim savepath As String
+    '保存パス全体 拡張子も文字列結合
+    savepath = saveFolder & "\" & saveFileName & ".conf" 'フォルダ名\ファイル名_td_agent.conf として保存
+    '----------------------------------------------------------------------------------------------------
+    '★step3-2 空のファイル番号取得
     Dim FileNum As Long
     FileNum = FreeFile
     
@@ -105,7 +116,7 @@ Sub CONF出力()
     '行番号
     Dim i As Integer
     '----------------------------------------------------------------------------------------------------
-    '★step3-2　ファイル書き込み工程
+    '★step3-3　ファイル書き込み工程
     '*** 書き込み工程 開始*** ◆◆◆
     'ファイルを開く
     Open savepath For Output As #FileNum
@@ -115,7 +126,7 @@ Sub CONF出力()
        CellValB = Sheet_conf.Cells(i, 2).Value 'B列の値
        CellValC = Sheet_conf.Cells(i, 3).Value 'C列の値
        
-       '★step3-2-1　A列の値を取得してインデントの挿入
+       '★step3-3-1　A列の値を取得してインデントの挿入
            '●インデント挿入
            'https://officedic.com/excel-vba-howto-stringfunction/
            'String関数の構文:String(length, character) 、lengthは生成する文字列の長さを指定しCharacterは繰り返される文字を指定。
@@ -123,7 +134,7 @@ Sub CONF出力()
        Dim Ind As String
        Ind = String(CellValA, Space(1)) 'インデント生成　1個のスペースをA列の数字ぶん
        '****************************************************************************************************
-       '★step3-2-2　source-storageタグ(B列の値に応じて判断)
+       '★step3-3-2　source-storageタグ(B列の値に応じて判断)
            '●特定文字列を含むかどうか InStr関数
            'InStr(検索対象,"キーワード")→検索対象がキーワードを含む場合
            'https://yaromai.jp/include-string/#:~:text=VBA%E3%81%A7%E3%81%AFInstr%E9%96%A2%E6%95%B0%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E6%96%87%E5%AD%97%E5%88%97%E3%82%92%E5%90%AB%E3%82%80%E3%81%8B%E5%88%A4%E5%AE%9A%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99%E3%80%82%20Sub%20InstrSample1%28%29%20Const%20str%20As%20String%20%3D,Then%20MsgBox%20%22str%E3%81%AF%E3%82%A2%E3%82%92%E5%90%AB%E3%82%80%22%20End%20Sub%20%E4%B8%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%A0%E3%81%AE%E3%82%88%E3%81%86%E3%81%AB%E3%80%81InStr%20%3E%200%E3%81%A8%E6%AF%94%E8%BC%83%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%A7%E3%80%8C%E7%89%B9%E5%AE%9A%E3%81%AE%E6%96%87%E5%AD%97%E5%88%97%E3%80%8D%E3%82%92%E5%90%AB%E3%82%80%E3%81%8B%E3%82%92%E5%88%A4%E5%AE%9A%E3%81%99%E3%82%8B%E3%81%93%E3%81%A8%E3%81%8C%E3%81%A7%E3%81%8D%E3%81%BE%E3%81%99%E3%80%82
@@ -168,7 +179,7 @@ Sub CONF出力()
        End If
        '◆sourceタグの範囲↑*********************************************************
        
-       '★step3-2-3　match-serverタグ
+       '★step3-3-3　match-serverタグ
        '〇match-serverタグ
        '◆matchタグの範囲↓**********************************************************
         '※matchタグの右側の値について 4種類の異なる値のものがある(30/33/36/39行目のC列)
