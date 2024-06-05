@@ -9,7 +9,7 @@
 'https://excel-ubara.com/excelvba4/EXCEL222.html
 'ExcelVBA実践テクニック P.117
 
-'任意のレコードを選択して出力 →入力した列名を列番号に変換する
+'任意のレコードを選択して出力 →入力した列名を列番号に変換する(※アルファベット列が何列目なのか考えなくても良いように)
 Sub CONF出力()
     '★step1 confシート・設定シート準備
     Dim Sheet_conf As Worksheet
