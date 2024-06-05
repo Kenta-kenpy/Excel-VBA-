@@ -4,7 +4,9 @@ Sub Convert_AlphabetToNumber()
     Dim Sh As Worksheet
     Dim sheetFound As Boolean ' シートが見つかったかどうか あればTrue
     Dim S As String
-    S = InputBox(Prompt:="シート名をconfと入力してください") 'Prompt:=""でインプットボックスの既定のメッセージを表示
+    'Prompt:=""でインプットボックスの既定のメッセージを表示
+    'Default:=""で標準で入力済み状態にする
+    S = InputBox(Prompt:="シート名をconfと入力してください", Default:="conf")
     
     ' シートの数だけループして、confシートが存在するかチェックする
     For Each Sh In Worksheets
@@ -17,23 +19,28 @@ Sub Convert_AlphabetToNumber()
     Dim GetCol  As String '何列目か知りたい列名
     Dim ColNo   As Long 'その列名が何列目か
     Dim ColFound As Boolean ' 列が見つかったかどうか あればTrue
-    GetCol = InputBox("何列目か調べたい列名をアルファベットで入力(例:C、AA)")
-
+    'インプットボックスで見本を示す
+    GetCol = InputBox(Prompt:="何列目か調べたい列名をアルファベットで入力" & vbCrLf & "CやAAなど", Default:="C")
     ColNo = Range(GetCol & "1").Column
+    
     MsgBox (GetCol & "列は" & ColNo & "列目")
     Exit Sub  '抜ける()
     
+    Dim ColName As Variant '列名
+    '列数だけループして指定された列名が存在するかチェックする
+    For Each ColName In Worksheets
+        If ColName.Name = GetCol Then
+            ColFound = True
+            Exit For '列名が見つかったらループを抜ける
+        End If
+    Next ColName
+
     ' InputBoxで列名の入力がなかった場合の処理
     If GetCol = "" Then
         MsgBox ("列名を入力してください")
         Exit Sub  '抜ける
     End If
-    
-    ' 入力された列名が見つからなかった場合の処理
-    If Not ColFound Then
-        MsgBox ("その列名は存在しません")
-        Exit Sub  '抜ける
-    End If
+
 End Sub
 
 '  A   B   C   D   E   F   G   H   I   J   K   L   M   N   O   P   Q   R   S   T   U   V   W   X   Y   Z
