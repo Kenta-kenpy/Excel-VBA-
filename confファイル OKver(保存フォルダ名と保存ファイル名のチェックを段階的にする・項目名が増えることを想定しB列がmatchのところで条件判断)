@@ -22,33 +22,35 @@ Sub CONF出力()
     Dim saveFolder As String '保存場所パス
     Dim saveFileName As String '保存ファイル名
     
-    '保存フォルダ名と保存ファイル名が入力されているか段階的にチェック
+    '保存フォルダ名と保存ファイル名が入力された場合
     '設定シートのB1セルから保存場所を取得 変数にセット
     saveFolder = Sheet_set.Range("B1").Value
-    
-    '保存フォルダ名が未入力の場合 異常終了させる
-    If (saveFolder = "") Then
-        '設定シートA1・B1セルにカーソルを合わせる
-        Application.Goto Reference:=Sheet_set.Range("A1:B1"), Scroll:=True
-        MsgBox ("設定シートのB1セルの保存フォルダパスを確認してください"), vbCritical '警告メッセージアイコン
-        Exit Sub  '抜ける
-    End If
-    
     'confシートのC1セルから保存ファイル名を取得 変数にセット
     saveFileName = Sheet_conf.Range("C1").Value
     
-    '保存ファイル名が未入力の場合 異常終了させる
-    If (saveFileName = "") Then
-        '設定シートB1・C1セルにカーソルを合わせる
-        Application.Goto Reference:=Sheet_conf.Range("B1:C1"), Scroll:=True
-        MsgBox ("confシートのC1セルの保存ファイル名を確認してください"), vbCritical '警告メッセージアイコン
+    '保存フォルダ名と保存ファイル名両方が未入力の場合
+    '※両方の場合を優先して書く cf.)FizzBuzz
+    If (saveFolder = "" And saveFileName = "") Then
+        MsgBox ("設定シートのB1セルに保存フォルダパスが入力されていません" & vbCrLf & _
+        "confシートのC1セルに保存ファイル名が入力されていません"), vbCritical '警告メッセージアイコン　'※_はメッセージボックスでの改行記号
         Exit Sub  '抜ける
+    '保存フォルダ名と保存ファイル名どちらかが未入力の場合
+    ElseIf (saveFolder = "") Then 'パス名が無効ですの実行時エラー発生のため On Error Resume Nextで回避
+        On Error Resume Next 'エラー無視で続行
+        '設定シートB1セルにカーソルが合っている状態 https://jizilog.com/vba-celljumpgoto
+        Application.Goto Reference:=Sheet_set.Range("B1"), Scroll:=True
+        MsgBox ("設定シートのB1セルに保存フォルダパスが入力されていません"), vbCritical '警告メッセージアイコン
+        Exit Sub  '抜ける
+    ElseIf (saveFileName = "") Then
+        'confシートC1セルにカーソルが合っている状態
+        Application.Goto Reference:=Sheet_conf.Range("C1"), Scroll:=True
+        MsgBox ("confシートのC1セルに保存ファイル名が入力されていません"), vbCritical '警告メッセージアイコン
+        Exit Sub  '抜ける
+    '保存フォルダ名と保存ファイル名が指定された場合
+    ElseIf Not IsEmpty(saveFolder & saveFileName) Then
+        MsgBox ("フォルダ名 " & saveFolder & "を確認しました" & vbCrLf & _
+                "ファイル名 " & saveFileName & "を確認しました"), vbInformation '情報メッセージアイコン
     End If
-    
-    '保存フォルダ名と保存ファイル名が入力されていることが確認できた
-    MsgBox ("フォルダ名 " & saveFolder & " を確認しました" & vbCrLf & _
-                "ファイル名 " & saveFileName & " を確認しました"), vbInformation '情報メッセージアイコン
-    
     '----------------------------------------------------------------------------------------------------
     '★step1-3　名前を付けて保存ダイアログボックスを使わないファイル保存
     'ファイル書き込みより前にファイル名など指定
@@ -166,9 +168,21 @@ Sub CONF出力()
        '★step3-2-3　match-serverタグ
        '〇match-serverタグ
        '◆matchタグの範囲↓**********************************************************
+        '※matchタグの右側の値について 4種類の異なる値のものがある(30/33/36/39行目のC列)
         'タグ名をセルからとってくる
-        If (CellValB = "match") Then 'B列がmatchのところ(項目が増えてもいいように)
-            Print #FileNum, "<" & CellValB & Space(1) & CellValC & ">"  'matchタグ開始
+        If (CellValA = 0) Then 'A列の値が0のところ
+            If i = 30 Then
+                Print #FileNum, "<" & CellValB & Space(1) & CellValC & ">"  'matchタグ開始
+            End If
+            If i = 33 Then
+                Print #FileNum, "<" & CellValB & Space(1) & CellValC & ">"  'matchタグ開始
+            End If
+            If i = 36 Then
+                Print #FileNum, "<" & CellValB & Space(1) & CellValC & ">"  'matchタグ開始
+            End If
+            If i = 39 Then
+                Print #FileNum, "<" & CellValB & Space(1) & CellValC & ">"  'matchタグ開始
+            End If
         End If
        
        'B列のセルの値に"@"を含むものがある場合
