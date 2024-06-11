@@ -107,17 +107,19 @@ Sub CONF出力()
             'ポイント　条件分岐の方法・データ重複となるのを避ける
             '文字列比較 StrComp("テキスト1","テキスト2",vbTextCompare) = 0→等しい
 
-            '@typeの次の行がchannels→sourceタグ
-            '@typeの次の行がpersistent→storageタグ
+            '次の行がchannels→sourceタグ
             If Sheet_conf.Cells(i + 1, 2).Value = "channels" Then
                 Print #FileNum, "<source>"
                 Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
             End If
+            '次の行がpersistent→storageタグ
             If Sheet_conf.Cells(i + 1, 2).Value = "persistent" Then
                 Print #FileNum, Space(2) & "<storage>"
                 Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
+            '次の行がpath→値出力(@type，persistentの行)
             ElseIf Sheet_conf.Cells(i + 1, 2).Value = "path" Then
                     Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
+            '今の行がpath→値出力(pathの行)
             ElseIf Sheet_conf.Cells(i, 2).Value = "path" Then 'pathの行
                     Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
                 Print #FileNum, Space(2) & "</storage>"
@@ -125,7 +127,7 @@ Sub CONF出力()
                 Print #FileNum, "" '空行
             End If
             
-            'Like演算子　文字列に特定の文字を含むか判定
+            'Like演算子　文字列に特定の文字を含むか判定 (channels、read_existing_events、tagの行)
             If Sheet_conf.Cells(i, 2).Value Like "c*s" Then
                 Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
             ElseIf Sheet_conf.Cells(i, 2).Value Like "r*s" Then
@@ -141,9 +143,10 @@ Sub CONF出力()
                 Print #FileNum, "<" & CellValB & Space(1) & CellValC & ">"
             End If
             
-            'ある行がhost→serverタグ
+            '@typeの行
             If Sheet_conf.Cells(i + 1, 2).Value = "host" Then
                 Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
+            '今の行がhost→serverタグおよびmatchタグ閉じる
             ElseIf Sheet_conf.Cells(i, 2).Value = "host" Then
                 Print #FileNum, Space(2) & "<server>"
                 Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
