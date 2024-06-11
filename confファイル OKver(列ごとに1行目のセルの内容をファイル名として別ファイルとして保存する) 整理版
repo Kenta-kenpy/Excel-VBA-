@@ -128,11 +128,7 @@ Sub CONF出力()
             End If
             
             'Like演算子　文字列に特定の文字を含むか判定 (channels、read_existing_events、tagの行)
-            If Sheet_conf.Cells(i, 2).Value Like "c*s" Then
-                Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
-            ElseIf Sheet_conf.Cells(i, 2).Value Like "r*s" Then
-                Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
-            ElseIf Sheet_conf.Cells(i, 2).Value Like "t*g" Then
+            If Sheet_conf.Cells(i, 2).Value Like "channels" Or Sheet_conf.Cells(i, 2).Value Like "read_existing_events" Or Sheet_conf.Cells(i, 2).Value Like "tag" Then
                 Print #FileNum, Ind & CellValB & Space(1) & CellValC  'B列とC列のデータをインデントとともに出力
             End If
             
