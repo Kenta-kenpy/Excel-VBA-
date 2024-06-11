@@ -105,8 +105,8 @@ Sub CONF出力()
             '********************************************************************************
             '★step3-2-2　複数箇所で登場する「@type」の区別/データ書込みの条件判断
             'ポイント　条件分岐の方法・データ重複となるのを避ける
-            '文字列比較 StrComp("テキスト1","テキスト2",vbTextCompare) = 0→等しい
-
+            
+            '〇source-storageタグ
             '次の行がchannels→sourceタグ
             If Sheet_conf.Cells(i + 1, 2).Value = "channels" Then
                 Print #FileNum, "<source>"
@@ -137,7 +137,7 @@ Sub CONF出力()
             End If
             
             '--------------------------------------------------------------------------------------------------
-            'match-serverタグ
+            '〇match-serverタグ
             'A列の値が0→matchタグ
             If Sheet_conf.Cells(i, 1).Value = 0 Then
                 Print #FileNum, "<" & CellValB & Space(1) & CellValC & ">"
