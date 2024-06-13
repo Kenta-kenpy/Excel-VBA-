@@ -1,0 +1,143 @@
+'http://suugaku.biz/vbakougi/dai2bu/
+
+Dim currentValue As Double ' 現在の入力値を保持する変数
+Dim resultValue As Double ' 計算結果を保持する変数
+Dim operatorType As String ' 現在の演算子を保持する変数（+、-、*、/）
+Dim isDecimal As Boolean ' 小数点が入力されたかどうかを示すフラグ
+Dim decimalPlace As Integer ' 小数点以下の桁数を追跡する変数
+
+' 数字キーが押されたときの処理
+Private Sub CommandButton_Click(num As Integer)
+    If isDecimal Then ' 小数点が入力された後の場合
+        decimalPlace = decimalPlace + 1 ' 小数点以下の桁数を増やす
+        currentValue = currentValue + num / (10 ^ decimalPlace) ' 小数点以下の値を追加
+    Else
+        currentValue = currentValue * 10 + num ' 入力された数字を10倍して加算（整数部分の追加）
+    End If
+    TextBox1.Text = currentValue ' テキストボックスに現在の入力値を表示
+End Sub
+
+' 各数字キーに対応するクリックイベント
+Private Sub CommandButton0_Click()
+    CommandButton_Click 0
+End Sub
+
+Private Sub CommandButton1_Click()
+    CommandButton_Click 1
+End Sub
+
+Private Sub CommandButton2_Click()
+    CommandButton_Click 2
+End Sub
+
+Private Sub CommandButton3_Click()
+    CommandButton_Click 3
+End Sub
+
+Private Sub CommandButton4_Click()
+    CommandButton_Click 4
+End Sub
+
+Private Sub CommandButton5_Click()
+    CommandButton_Click 5
+End Sub
+
+Private Sub CommandButton6_Click()
+    CommandButton_Click 6
+End Sub
+
+Private Sub CommandButton7_Click()
+    CommandButton_Click 7
+End Sub
+
+Private Sub CommandButton8_Click()
+    CommandButton_Click 8
+End Sub
+
+Private Sub CommandButton9_Click()
+    CommandButton_Click 9
+End Sub
+
+' 演算子キーが押されたときの処理
+Private Sub CommandButtonOperator_Click(op As String)
+    If operatorType <> "" Then ' 既に演算子が入力されている場合
+        Calculate ' 現在の計算を実行
+    Else
+        resultValue = currentValue ' 現在の入力値を計算結果に設定
+    End If
+    currentValue = 0 ' 現在の入力値をリセット
+    operatorType = op ' 新しい演算子を設定
+    isDecimal = False ' 小数点フラグをリセット
+    decimalPlace = 0 ' 小数点以下の桁数をリセット
+End Sub
+
+' 足し算キーが押されたときの処理
+Private Sub CommandButton_Tasu_Click()
+    CommandButtonOperator_Click "+"
+End Sub
+
+' 引き算キーが押されたときの処理
+Private Sub CommandButton_Hiku_Click()
+    CommandButtonOperator_Click "-"
+End Sub
+
+' 掛け算キーが押されたときの処理
+Private Sub CommandButton_Kake_Click()
+    CommandButtonOperator_Click "*"
+End Sub
+
+' 割り算キーが押されたときの処理
+Private Sub CommandButton_Waru_Click()
+    CommandButtonOperator_Click "/"
+End Sub
+
+' イコールキーが押されたときの処理
+Private Sub CommandButton_Equal_Click()
+    Calculate ' 現在の計算を実行
+    operatorType = "" ' 演算子をリセット
+End Sub
+
+' 計算を実行する処理
+Private Sub Calculate()
+    Select Case operatorType
+        Case "+"
+            resultValue = resultValue + currentValue ' 足し算を実行
+        Case "-"
+            resultValue = resultValue - currentValue ' 引き算を実行
+        Case "*"
+            resultValue = resultValue * currentValue ' 掛け算を実行
+        Case "/"
+            resultValue = resultValue / currentValue ' 割り算を実行
+    End Select
+    TextBox1.Text = resultValue ' 計算結果をテキストボックスに表示
+    currentValue = resultValue ' 現在の入力値を計算結果に設定
+End Sub
+
+' 小数点キーが押されたときの処理
+Private Sub CommandButton_Dot_Click()
+    isDecimal = True ' 小数点フラグを設定
+    decimalPlace = 0 ' 小数点以下の桁数をリセット
+End Sub
+
+' クリアキーが押されたときの処理
+Private Sub CommandButtonClear_Click()
+    currentValue = 0 ' 現在の入力値をリセット
+    resultValue = 0 ' 計算結果をリセット
+    operatorType = "" ' 演算子をリセット
+    isDecimal = False ' 小数点フラグをリセット
+    decimalPlace = 0 ' 小数点以下の桁数をリセット
+    TextBox1.Text = "0" ' テキストボックスに0を表示
+End Sub
+
+'フォームサイズ調整
+'https://lilia-study.com/excel/excel-vba/userform/height-width-5/
+Private Sub UserForm_Initialize()
+
+Application.WindowState = xlNormal
+
+With 電卓
+    電卓.Height = 400 '高さ
+    電卓.Width = 400 '幅
+End With
+
+End Sub
