@@ -1,0 +1,172 @@
+'問題点：matchタグの @type forwardが出力できていない→出るようになった
+'改善方針
+'・タグ開始　インデント増える、タグ閉じる　インデント減る
+'・B列の項目名が何か
+'→これで判断をする
+
+Sub CONF出力()
+    '★step1 confシート
+    Dim Sheet_conf As Worksheet
+    Dim Sheet_set As Worksheet
+    
+    '★step1-1 confシート・設定シートをセット
+    Set Sheet_conf = ThisWorkbook.Worksheets("conf")
+    Set Sheet_set = ThisWorkbook.Worksheets("設定")
+    '起動時にconfシートが選択されるようにする
+    Sheet_conf.Activate
+    
+    '列の幅を自動調整
+    Sheet_conf.Range("B1:C1").EntireColumn.AutoFit
+    Sheet_set.Range("A1:B1").EntireColumn.AutoFit
+    '----------------------------------------------------------------------------------------------------
+
+    '★step1-2 フォルダ名とファイル名をセルから取得
+    Dim saveFolder As String '保存場所パス
+    Dim saveFileName As String '保存ファイル名
+    '行番号
+    Dim i As Integer
+    '列番号
+    Dim j As Integer
+    
+    '保存フォルダ名と保存ファイル名が入力されているか段階的にチェック
+    '●設定シートのB1セルから保存フォルダ名を取得 変数にセット
+    saveFolder = Sheet_set.Range("B1").Value
+    
+    '保存フォルダ名が未入力の場合 異常終了させる
+    If (saveFolder = "") Then
+        '設定シートA1・B1セルにカーソルを合わせる
+        Application.Goto Reference:=Sheet_set.Range("A1:B1"), Scroll:=True
+        MsgBox ("設定シートのB1セルの保存フォルダパスを確認してください"), vbCritical '警告メッセージアイコン
+        Exit Sub  '抜ける
+    End If
+
+    '----------------------------------------------------------------------------------------------------
+    
+    '★step2 confシートのデータの読み込み ※B1セルを除く
+    '----- シートのセルを縦方向に見た場合　使用済みセルの最大行番号を求める
+    '列の最終行を取得する必要がある
+    '行
+    Dim endRow As Long
+    ' B1セルを起点として最終行番号を取得(下に向かって)
+    endRow = Sheet_conf.Range("B1").End(xlDown).Row
+    Dim countRow_B As Integer 'データ行数数える
+    countRow_B = Application.WorksheetFunction.CountA(Sheet_conf.Columns(2)) 'シート2列目(B列)のデータ範囲の行数を数える
+    MsgBox ("B列データ行数は" & countRow_B - 1) '←データ行数を取得
+
+    '----------------------------------------------------------------------------------------------------
+    
+    '★step2.5 データ範囲の選択
+    '----- シートのセルを横方向に見た場合　使用済みセルの最大列番号を求める
+    '行の最終列を取得する
+    '列
+    Dim endCol As Long
+    ' B1セルを起点として最終行番号を取得(右に向かって)
+    endCol = Sheet_conf.Range("B1").End(xlToRight).Column
+    Dim countCol As Integer 'データ列数数える
+    countCol = Application.WorksheetFunction.CountA(Sheet_conf.Rows(2)) 'シート2行目のデータ範囲の列数を数える
+    MsgBox ("全データ列数は" & countCol - 2)  '←データ列数を取得
+
+    '----------------------------------------------------------------------------------------------------
+
+    '★step3 confシートのデータの読み込みとファイル出力
+    '★step3-1　ファイル番号と変数の準備
+    Dim FileNum As Long 'ファイル番号
+    '空のファイル番号取得(列が変わるタイミングでファイル番号を取得することで別ファイルとして扱う)
+    FileNum = FreeFile '毎回別のファイルとしてファイル番号を振らせる
+    
+    'セルの値
+    Dim CellValA As String 'A列の値(インデント)
+    Dim CellValB As String 'B列の値
+    Dim CellValC As String 'C列以降の値
+    
+    '保存パス全体
+    Dim Savepath As String
+    'インデント
+    Dim Ind As String
+    
+    '----------------------------------------------------------------------------------------------------
+    '★step3-2  名前を付けて保存ダイアログボックスを使わないファイル保存
+    '※列が変わるたびにファイル名をリセットさせる（それによって列ごとの出力になる）
+    For j = 3 To endCol '3列目からデータ範囲まで
+    '★ファイル書き込みより前にファイル名など指定
+    '★ファイル保存(列のループ内にsaveFileNameとsavepathを書くことで列ごとに別のファイルとする)
+        '保存ファイル名は列ごとに変わる
+        saveFileName = Sheet_conf.Cells(1, j).Value  '列が変わるごとにファイル名を取得する
+        '保存ファイル名が未入力の場合 異常終了させる
+        If (saveFileName = "") Then
+            'confシート該当ファイル名のセルにカーソルを合わせる
+            Application.Goto Reference:=Sheet_conf.Cells(1, j), Scroll:=True
+            MsgBox ("confシートのC列以降の1行目セルの保存ファイル名を確認してください"), vbCritical '警告メッセージアイコン
+            Exit Sub  '抜ける
+        End If
+        
+        ' saveFolder と saveFileName を結合して savepath を作成する '_td_agentまで含めたファイル名にする
+        Savepath = saveFolder & "\" & saveFileName & "_td_agent.conf" 'フォルダ名\ファイル名_td_agent.conf として保存
+    
+    '★step3-3  ファイル書き込み工程
+        '*** 書き込み工程 開始*** ◆◆◆
+        Open Savepath For Output As #FileNum 'ファイルを開く
+            For i = 2 To endRow '2行目からデータ範囲まで
+                CellValA = Sheet_conf.Cells(i, 1).Value 'A列の値(インデント)
+                CellValB = Sheet_conf.Cells(i, 2).Value 'B列の値
+                CellValC = Sheet_conf.Cells(i, j).Value 'C列以降のセルの値
+                '★A列の値を取得してインデントの挿入
+                'String関数の構文:String(length, character) 、lengthは生成する文字列の長さを指定しCharacterは繰り返される文字を指定。
+                Ind = String(CellValA, Space(1)) 'インデント生成　1個のスペースをA列の数字ぶん
+                '********************************************************************************
+                '★・タグ開始　インデント増える、タグ閉じる　インデント減る ・B列の項目名が何か →これで判断をする
+                'B列の次の行の値がchannnelsのときsourceタグ開始
+                If ((Sheet_conf.Cells(i + 1, 2).Value) = "channels") Then
+                    Print #FileNum, "<source>" 'sourceタグ開始
+                End If
+                
+                'matchタグの開始条件＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+                'A列の値が0のときmatchタグ開始
+                If (CellValA = 0) Then
+                    Print #FileNum, Ind & "<" & CellValB & Space(1) & CellValC & ">"  'matchタグ開始
+                    'B列がmatchのときシートの次の行のB列とC列の値を出す(@type forward)
+                    If CellValB = "match" Then
+                        Print #FileNum, Space(2) & Sheet_conf.Cells(i + 1, 2).Value & Space(1) & Sheet_conf.Cells(i + 1, 3).Value
+                    End If
+                End If
+                ' ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+                
+                'A列の上の行よりインデントの値が大きいときタグ開始
+                If ((Sheet_conf.Cells(i + 1, 1).Value) > CellValA) Then
+                    'B列の値がtagのときstorageタグ開始
+                    If (CellValB = "tag") Then
+                        Print #FileNum, Ind & CellValB & Space(1) & CellValC
+                        Print #FileNum, Space(2) & "<storage>"  'storageタグ開始
+                    End If
+                'A列の上の行よりインデントの値が小さいとき　タグ閉じる
+                ElseIf ((Sheet_conf.Cells(i + 1, 1).Value) < CellValA) Then
+                    'B列の値がpathのときstorage・sourceタグ閉じ
+                    If (CellValB = "path") Then
+                        Print #FileNum, Ind & CellValB & Space(1) & CellValC
+                        Print #FileNum, Space(2) & "</storage>" 'storageタグ閉じ
+                        Print #FileNum, "</source>" 'sourceタグ閉じ
+                        Print #FileNum, "" '★空行処理
+                    'B列の値がhostのときserver・matchタグ閉じ
+                    ElseIf (CellValB = "host") Then
+                        Print #FileNum, Space(2) & "<server>" 'serverタグ開始
+                        Print #FileNum, Ind & CellValB & Space(1) & CellValC
+                        'server・matchタグ閉じ
+                        Print #FileNum, Space(2) & "</server>" 'serverタグ閉じ
+                        Print #FileNum, "</match>" 'matchタグ閉じ
+                        Print #FileNum, "" '★空行処理
+                    End If
+                'A列の上の行とインデントの値が変わらないとき
+                Else
+                    Print #FileNum, Ind & CellValB & Space(1) & CellValC
+                End If
+            Next i  'データ範囲の行を進める
+        Close #FileNum 'ファイルを閉じる
+        '*** 書き込み工程 終了*** ◆◆◆
+    Next j  'データ範囲の列を進める
+    
+    '保存先フォルダを開く
+    Dim save As String
+    save = InStrRev(Savepath, "\")
+    saveFolder = Left(Savepath, save - 1)
+    CreateObject("WScript.Shell").Run saveFolder
+End Sub
