@@ -1,4 +1,5 @@
-'iniフォルダを作成しその中に機器名称ごとのフォルダを作りiniファイルを出力させるものとする。
+'※新たに実行する際はiniフォルダの中身が空か確認するかiniフォルダ自体を事前に消す
+'デスクトップにiniフォルダを作成しその中に機器名称ごとのフォルダを作りiniファイルを出力させるものとする。
 '※ベース設定のG列デフォルト値が空欄の場合、個別設定のH列設定値を代入する。(未解決)
 
 Const START_ROW As Long = 6 ' データ全体の開始行
@@ -31,7 +32,7 @@ Sub ArtINI()
     Set fs = CreateObject("Scripting.FileSystemObject") ' FileSystemObjectを作成
     Set dict = CreateObject("Scripting.Dictionary") ' Dictionaryオブジェクトを作成
 
-    ' 機器名称の開始行と終了行、機器名称の初期値を指定
+    ' 最初の機器名称の開始行と終了行、機器名称の初期値を指定
     startRow = 6 ' 開始行を設定
     endRow = 196 ' 終了行を設定
     currentEquipment = "メイン卓A(画A/C)" ' 初期の機器名称を設定
@@ -80,7 +81,7 @@ Sub ArtINI()
             
             ' iniファイルの内容を作成
             If Not dict.Exists(section) Then ' セクションが存在しない場合
-                dict(section) = "[" & section & "]" & vbCrLf ' セクションを作成
+                dict(section) = section & vbCrLf ' セクションを作成
             End If
             dict(section) = dict(section) & key & " = " & outputValue & vbCrLf ' キーと値を追加
         Next cell
