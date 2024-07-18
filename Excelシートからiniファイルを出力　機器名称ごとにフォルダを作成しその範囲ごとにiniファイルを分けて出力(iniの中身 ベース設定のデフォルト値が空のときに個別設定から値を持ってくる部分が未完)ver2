@@ -86,7 +86,7 @@ Sub ArtINI()
         Next cell
 
         ' iniファイルを作成
-        filePath = FolderPath & "\config.ini" ' ファイルパスを設定
+        filePath = FolderPath & "\ArtSendTerm.ini" ' ファイルパスを設定
         Set ts = fs.CreateTextFile(filePath, True) ' テキストファイルを作成
         For Each section In dict.Keys ' 各セクションを処理
             ts.WriteLine dict(section) ' セクションを書き込む
