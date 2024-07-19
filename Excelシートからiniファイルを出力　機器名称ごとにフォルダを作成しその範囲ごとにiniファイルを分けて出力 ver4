@@ -167,7 +167,8 @@ Sub GetNextEquipmentName(startRow As Long, ByRef equipmentName As String) '機�
         equipmentName = "メイン卓WN1(画A/C)"
     End If
 End Sub
-定数の定義
+
+1. 定数の定義
 START_ROW、END_ROW、CHARSET_UTF8、LINE_SEPARATOR_CRLFなどの定数が設定されます。これらの定数は後の処理で使用されます。
 2. ArtINIサブルーチンの開始
 各種変数が宣言され、初期化されます（例：lastRow、startRow、endRow、FolderPathなど）。
