@@ -1,5 +1,4 @@
 '※新たに実行する際はiniフォルダの中身が空か確認するかiniフォルダ自体を事前に消す
-'デスクトップにiniフォルダを作成しその中に機器名称ごとのフォルダを作りiniファイルを出力させるものとする。
 '※※ベース設定のG列デフォルト値が空欄の場合、個別設定のH列設定値を代入する。
 
 '★step1 定数の定義
@@ -51,11 +50,11 @@ Sub ArtINI()
         '範囲オブジェクト rng
         Set rng = Sh.Range("B" & startRow & ":B" & endRow) ' 範囲を設定
         
-        ' 配列の初期化
-        sectionCount = 0
-        ReDim sections(0)
-        ReDim keys(0)
-        ReDim values(0)
+        ' 配列の初期化(データ型はそのまま)
+        sectionCount = 0 'セクション数
+        ReDim sections(0) As String
+        ReDim keys(0) As String
+        ReDim values(0) As String
         
         'これにより、各セルの値が取得され、分類 (classification)、セクション (section)、キー (key)、値 (value) が変数に格納されます。
         ' 各行データの処理
@@ -126,6 +125,7 @@ Sub ArtINI()
 End Sub
 
 '★機器ごとのフォルダ作成するSubルーチン 親フォルダが存在しない場合、親フォルダも含めて作成。
+'デスクトップにiniフォルダを作成しその中に機器名称ごとのフォルダを作りiniファイルを出力させるものとする。
 Sub CreateFolderRecursively(FolderPath As String)
     Dim fs As Object ' FileSystemObject
     Dim parentFolder As String ' 親フォルダ(ini)のパス
