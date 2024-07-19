@@ -1,12 +1,8 @@
-'※新たに実行する際はiniフォルダの中身が空か確認するかiniフォルダ自体を事前に消す
+'※デスクトップにiniフォルダを作成し機器ごとのフォルダを作成してそれぞれにiniファイルを作成する
 '※※ベース設定のG列デフォルト値が空欄の場合、個別設定のH列設定値を代入する。
 
-'★step1 定数の定義
-Const START_ROW As Long = 6 ' データ全体の開始行
-Const END_ROW As Long = 20000 ' データ全体の終了行
-
 Sub ArtINI()
-    '★step2-1 各種変数
+    '★step1 各種変数の設定
     Dim startRow As Long ' 機器名称の開始行
     Dim endRow As Long ' 機器名称の終了行
     Dim FolderPath As String ' フォルダパスの変数
@@ -20,10 +16,10 @@ Sub ArtINI()
     Dim sectionCount As Long ' セクション数のカウント
     Dim filePath As String ' ファイルパスの変数
     Dim iniFile As String ' iniファイルの名前
-    Dim fs As Object ' FileSystemオブジェクト
-    Dim ts As Object ' TextStreamオブジェクト
+    Dim fs As Object ' FileSystemオブジェクト(フォルダの作成など)
+    Dim ts As Object ' TextStreamオブジェクト(ファイルの書き込み)
 
-    '★step2-2 シートの設定
+    '★step2 シートの設定
     Dim WS As Worksheet ' ベース設定シート用のワークシートオブジェクト
     Set WS = ThisWorkbook.Worksheets("ベース設定") ' ベース設定シートを設定
     Dim Sh As Worksheet ' 個別設定シート用のワークシートオブジェクト
@@ -39,7 +35,7 @@ Sub ArtINI()
     
     '★step3 ループ処理
     Do While startRow <= 3061 ' 指定行までループ
-        ' 機器名称のスラッシュを全角スラッシュに置換　※サニタイズ
+        ' 機器名称のスラッシュを全角スラッシュに置換　※サニタイズ特別な意味を持つ文字
         sanitizedEquipment = Replace(currentEquipment, "/", "／")
         
         'デスクトップにiniフォルダを作りその中に機器名称ごとのフォルダを出力　更に各フォルダにiniファイルを作成
@@ -50,46 +46,45 @@ Sub ArtINI()
         '範囲オブジェクト rng
         Set rng = Sh.Range("B" & startRow & ":B" & endRow) ' 範囲を設定
         
-        ' 配列の初期化(データ型はそのまま)
+        ' 配列の初期化
         sectionCount = 0 'セクション数
         ReDim sections(0) As String
         ReDim keys(0) As String
         ReDim values(0) As String
         
-        'これにより、各セルの値が取得され、分類 (classification)、セクション (section)、キー (key)、値 (value) が変数に格納されます。
-        ' 各行データの処理
+        ' 個別設定シートの各行データの処理
         For Each cell In rng ' 範囲内の各セルを処理
             Dim classification As String ' 分類 C列
             Dim section As String ' セクション E列
             Dim key As String ' キー F列
             Dim value As String ' 値 H列
             Dim baseValue As String ' ベース値
-            Dim outputValue As String ' 出力値
+            Dim outputValue As String ' iniファイルに書き込む出力値
             
             classification = Sh.Cells(cell.row, 3).value ' C列の値取得
             section = Sh.Cells(cell.row, 5).value ' E列の値取得
             key = Sh.Cells(cell.row, 6).value ' F列の値取得
             value = Sh.Cells(cell.row, 8).value ' H列の値取得
             
-            '設定値valueが空の場合､ベース設定シートの値を使用する。
+            'ベース設定のG列デフォルト値が空欄の場合、個別設定のH列設定値を代入する。
             If value = "" Then ' 値が空の場合
                 If WS.Cells(cell.row, 7) = "" Then ' ベース設定シートのG列が空欄の場合
                     outputValue = Sh.Cells(cell.row, 8).value ' 個別設定シートのH列の値を使用
-                Else
+                Else 'ベース設定シートのG列がすでに値がある場合
                     outputValue = WS.Cells(cell.row, 7).value ' ベース設定シートのG列の値を使用
                 End If
             Else
                 outputValue = value ' 値がある場合はそのまま出力値を設定
             End If
 
-            ' 配列にセクション、キー、値を追加
+            ' 配列にセクション、キー、値を追加(個別設定シート)
             sectionCount = sectionCount + 1
-            ReDim Preserve sections(sectionCount)
+            ReDim Preserve sections(sectionCount) 'データの値を保持したまま配列の要素数を変更
             ReDim Preserve keys(sectionCount)
             ReDim Preserve values(sectionCount)
-            sections(sectionCount) = section
-            keys(sectionCount) = key
-            values(sectionCount) = outputValue
+            sections(sectionCount) = section 'E列の値を配列にセット
+            keys(sectionCount) = key 'F列の値を配列にセット
+            values(sectionCount) = outputValue 'H列の値を配列にセット
         Next cell
 
         ' iniファイルを作成
