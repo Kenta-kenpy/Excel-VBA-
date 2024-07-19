@@ -8,7 +8,6 @@ Const END_ROW As Long = 20000 ' データ全体の終了行
 
 Sub ArtINI()
     '★step2-1 各種変数
-    Dim lastRow As Long ' 最終行の変数
     Dim startRow As Long ' 機器名称の開始行
     Dim endRow As Long ' 機器名称の終了行
     Dim FolderPath As String ' フォルダパスの変数
