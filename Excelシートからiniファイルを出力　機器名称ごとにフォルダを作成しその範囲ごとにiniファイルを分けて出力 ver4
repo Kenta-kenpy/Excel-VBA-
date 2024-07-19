@@ -2,12 +2,12 @@
 'デスクトップにiniフォルダを作成しその中に機器名称ごとのフォルダを作りiniファイルを出力させるものとする。
 '※※ベース設定のG列デフォルト値が空欄の場合、個別設定のH列設定値を代入する。
 
+'★step1 定数の定義
 Const START_ROW As Long = 6 ' データ全体の開始行
 Const END_ROW As Long = 20000 ' データ全体の終了行
-Const CHARSET_UTF8 As String = "UTF-8" ' UTF-8文字セットの定数
-Const LINE_SEPARATOR_CRLF As Long = -1 ' 改行コードの定数
 
 Sub ArtINI()
+    '★step2-1 各種変数
     Dim lastRow As Long ' 最終行の変数
     Dim startRow As Long ' 機器名称の開始行
     Dim endRow As Long ' 機器名称の終了行
@@ -25,20 +25,21 @@ Sub ArtINI()
     Dim fs As Object ' FileSystemオブジェクト
     Dim ts As Object ' TextStreamオブジェクト
 
-    ' シートの設定
+    '★step2-2 シートの設定
     Dim WS As Worksheet ' ベース設定シート用のワークシートオブジェクト
     Set WS = ThisWorkbook.Worksheets("ベース設定") ' ベース設定シートを設定
     Dim Sh As Worksheet ' 個別設定シート用のワークシートオブジェクト
     Set Sh = ThisWorkbook.Worksheets("個別設定") ' 個別設定シートを設定
     
-    ' FileSystemObjectの作成
+    ' ファイル操作できるようにする
     Set fs = CreateObject("Scripting.FileSystemObject") ' FileSystemObjectを作成
 
-    ' 最初の機器名称の開始行と終了行、機器名称の初期値を指定
+    '最初の機器名称の開始行と終了行、最初の機器名称 (currentEquipment) 設定
     startRow = 6 ' 開始行を設定
     endRow = 196 ' 終了行を設定
     currentEquipment = "メイン卓A(画A/C)" ' 初期の機器名称を設定
     
+    '★step3 ループ処理
     Do While startRow <= 3061 ' 指定行までループ
         ' 機器名称のスラッシュを全角スラッシュに置換　※サニタイズ
         sanitizedEquipment = Replace(currentEquipment, "/", "／")
@@ -47,7 +48,8 @@ Sub ArtINI()
         FolderPath = "C:\Users\swp\Desktop\ini\" & sanitizedEquipment ' フォルダパスを設定
         CreateFolderRecursively FolderPath ' フォルダを作成
         
-        ' 個別設定シートの機器名称ごとの開始セルと終了セルを取得
+        '★step4 個別設定シートの機器名称ごとの開始セルと終了セルを取得
+        '範囲オブジェクト rng
         Set rng = Sh.Range("B" & startRow & ":B" & endRow) ' 範囲を設定
         
         ' 配列の初期化
@@ -56,21 +58,22 @@ Sub ArtINI()
         ReDim keys(0)
         ReDim values(0)
         
-        ' 各行を処理
+        'これにより、各セルの値が取得され、分類 (classification)、セクション (section)、キー (key)、値 (value) が変数に格納されます。
+        ' 各行データの処理
         For Each cell In rng ' 範囲内の各セルを処理
-            Dim classification As String ' 分類の変数
-            Dim section As String ' セクションの変数
-            Dim key As String ' キーの変数
-            Dim value As String ' 値の変数
-            Dim baseValue As String ' ベース値の変数
-            Dim outputValue As String ' 出力値の変数
+            Dim classification As String ' 分類 C列
+            Dim section As String ' セクション E列
+            Dim key As String ' キー F列
+            Dim value As String ' 値 H列
+            Dim baseValue As String ' ベース値
+            Dim outputValue As String ' 出力値
             
-            classification = Sh.Cells(cell.row, 3).value ' C列の値を取得
-            section = Sh.Cells(cell.row, 5).value ' E列の値を取得
-            key = Sh.Cells(cell.row, 6).value ' F列の値を取得
-            value = Sh.Cells(cell.row, 8).value ' H列の値を取得
+            classification = Sh.Cells(cell.row, 3).value ' C列の値取得
+            section = Sh.Cells(cell.row, 5).value ' E列の値取得
+            key = Sh.Cells(cell.row, 6).value ' F列の値取得
+            value = Sh.Cells(cell.row, 8).value ' H列の値取得
             
-            ' 設定値が空の場合はベース設定シートから取得
+            '設定値valueが空の場合､ベース設定シートの値を使用する。
             If value = "" Then ' 値が空の場合
                 If WS.Cells(cell.row, 7) = "" Then ' ベース設定シートのG列が空欄の場合
                     outputValue = Sh.Cells(cell.row, 8).value ' 個別設定シートのH列の値を使用
@@ -92,6 +95,8 @@ Sub ArtINI()
         Next cell
 
         ' iniファイルを作成
+        'filePath にiniファイルのパスが設定され、fs.CreateTextFile によりファイルを作成。
+        '配列E列 sections、F列 keys、H列 values の内容がiniファイルに書き込まれる。
         filePath = FolderPath & "\ArtSendTerm.ini" ' ファイルパスを設定
         Set ts = fs.CreateTextFile(filePath, True) ' テキストファイルを作成
         
@@ -104,10 +109,15 @@ Sub ArtINI()
         
         ts.Close ' ファイルを閉じる
         
+        '次の範囲と機器名称の設定
+        'startRow と endRow を次の範囲に移動させる
+        'GetNextEquipmentName サブルーチンで､次の機器名称を取得する｡
+
         ' 次の範囲に移動
         startRow = endRow + 1
         endRow = endRow + 191
         GetNextEquipmentName startRow, currentEquipment ' 次の機器名称を取得
+        
     Loop ' ループの終了
     
     Dim outputPath As String
@@ -116,7 +126,7 @@ Sub ArtINI()
     CreateObject("WScript.Shell").Run outputPath   '保存したiniフォルダを開く
 End Sub
 
-'★機器ごとのフォルダ作成関数 親フォルダが存在しない場合、親フォルダも含めて作成。
+'★機器ごとのフォルダ作成するSubルーチン 親フォルダが存在しない場合、親フォルダも含めて作成。
 Sub CreateFolderRecursively(FolderPath As String)
     Dim fs As Object ' FileSystemObject
     Dim parentFolder As String ' 親フォルダ(ini)のパス
@@ -132,6 +142,7 @@ Sub CreateFolderRecursively(FolderPath As String)
 End Sub
 
 '★行の範囲から機器名称を設定するSubルーチン
+'startRow の値によって機器名称 (equipmentName) を当てはめる
 Sub GetNextEquipmentName(startRow As Long, ByRef equipmentName As String) '機器名称の参照渡し
     If startRow >= 6 And startRow <= 196 Then
         equipmentName = "メイン卓A(画A)"
@@ -167,36 +178,3 @@ Sub GetNextEquipmentName(startRow As Long, ByRef equipmentName As String) '機�
         equipmentName = "メイン卓WN1(画A/C)"
     End If
 End Sub
-
-1. 定数の定義
-START_ROW、END_ROW、CHARSET_UTF8、LINE_SEPARATOR_CRLFなどの定数が設定されます。これらの定数は後の処理で使用されます。
-2. ArtINIサブルーチンの開始
-各種変数が宣言され、初期化されます（例：lastRow、startRow、endRow、FolderPathなど）。
-使用するワークシート (WS、Sh) が設定されます。WSは「ベース設定」シートを指し、Shは「個別設定」シートを指します。
-FileSystemObjectが作成されます。これにより、ファイル操作が可能となります。
-3. ループの開始 (Do Whileループ)
-startRowとendRowの初期値が設定され、最初の機器名称 (currentEquipment) が設定されます。
-sanitizedEquipment変数で機器名称のスラッシュが全角スラッシュに置換されます。
-デスクトップにiniフォルダを作成し、その中に機器名称ごとのフォルダを作成します。フォルダパスはFolderPathに格納されます。
-4. 個別設定シートのデータ処理
-範囲オブジェクト rng が Sh.Range を用いて設定されます。これは現在の startRow と endRow の範囲を指します。
-各行のデータを処理するために For Each cell In rng ループが開始されます。これにより、各セルの値が取得され、分類 (classification)、セクション (section)、キー (key)、値 (value) が変数に格納されます。
-valueが空の場合、ベース設定シートの値が使用されます。
-配列 sections、keys、values にセクション、キー、値が追加されます。
-5. iniファイルの作成
-filePath にiniファイルのパスが設定され、fs.CreateTextFile によりテキストファイルが作成されます。
-配列 sections、keys、values の内容がiniファイルに書き込まれます。
-ファイルが閉じられます。
-6. 次の範囲と機器名称の設定
-startRow と endRow が次の範囲に設定されます。
-GetNextEquipmentName サブルーチンが呼び出され、次の機器名称が取得されます。
-7. ループの終了とiniフォルダの表示
-ループが startRow が 3061 を超えるまで続きます。
-最後に、デスクトップのiniフォルダが表示されます。
-サブルーチン CreateFolderRecursively
-指定されたフォルダが存在しない場合、親フォルダを含めてフォルダを再帰的に作成します。
-サブルーチン GetNextEquipmentName
-startRow の値に基づいて、適切な機器名称 (equipmentName) が設定されます。
-
-このコードは、指定された範囲内のデータを基にiniファイルを作成し、それぞれの機器名称ごとにフォルダを作成します。
-処理はデスクトップ上のフォルダ内に行われ、最終的にはそのフォルダが表示されます。
