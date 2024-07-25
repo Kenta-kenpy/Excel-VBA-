@@ -1,9 +1,10 @@
 '区分に対するキー値の値として、個別設定の設定値とベース設定のデフォルト値の場合で
 '両方とも出力させているようだ。→どちらの値を選んで出力させるかの処理が正しくない
+'※まずは点線の出力→OK
 
 '列番号を変更の場合でも、一箇所の変更だけで済むように(列挙体)
 ' ベース設定側の列
-Enum BaseColumnPositions
+Enum BaseColumnPositions2
     classification = 2 ' 分類列
     division = 3       ' 区分列
     key = 5            ' Key列
@@ -11,7 +12,7 @@ Enum BaseColumnPositions
 End Enum
 
 ' 個別設定側の列
-Enum IndividualColumnIndex
+Enum IndividualColumnIndex2
     No = 1           ' No列
     Device = 2      ' Device列
     category = 3    ' Category列
@@ -75,10 +76,10 @@ Function MakeArtINI(bMsgON As Boolean, oFile As String, oName As String) As Bool
     Dim previousValue As String: previousValue = ""
     
     Do While iLine <= ENDROW
-        If ws.Cells(iLine, IndividualColumnIndex.No).value = "" Then Exit Do
+        If ws.Cells(iLine, IndividualColumnIndex2.No).value = "" Then Exit Do
 
-        If ws.Cells(iLine, IndividualColumnIndex.Device).value <> "" Then
-            rawDeviceValue = ws.Cells(iLine, IndividualColumnIndex.Device).value
+        If ws.Cells(iLine, IndividualColumnIndex2.Device).value <> "" Then
+            rawDeviceValue = ws.Cells(iLine, IndividualColumnIndex2.Device).value
 
             ' 機器名称が変更された場合にフォルダを作成
             If rawDeviceValue <> rawDeviceValue2 Then
@@ -150,28 +151,31 @@ myError:
 End Function
 
 ' 指定の行からカテゴリとセクションのデータを取得し、特定の形式で文字列を作成する関数
+' 指定の行からカテゴリとセクションのデータを取得し、特定の形式で文字列を作成する関数
 Sub FormatCategoryAndSection(iLine As Long, ws As Worksheet, ByRef sOutData As String)
     Dim CategoryValue As String
     Dim SectionValue As String
     Dim ClassificationValue As String ' ベース設定シートのB列の分類列の値
 
-    CategoryValue = ws.Cells(iLine, IndividualColumnIndex.category).value
-    SectionValue = ws.Cells(iLine, IndividualColumnIndex.section).value
+    CategoryValue = ws.Cells(iLine, IndividualColumnIndex2.category).value
+    SectionValue = ws.Cells(iLine, IndividualColumnIndex2.section).value
 
     ' ベース設定シートの分類列の値を取得
-    ClassificationValue = ws.Cells(iLine, BaseColumnPositions.classification).value
+    ClassificationValue = ws.Cells(iLine, BaseColumnPositions2.classification).value
 
     sOutData = ""
 
+    ' カテゴリが変わった場合
     If CategoryValue <> previousCategory Then
         sOutData = vbCrLf & ";-----------------------------------------------------------" & vbCrLf & _
                    "; " & CategoryValue & vbCrLf & _
-                   ";-----------------------------------------------------------" & vbCrLf & _
+                   ";-----------------------------------------------------------" & vbCrLf
         previousCategory = CategoryValue
     End If
 
+    ' セクションが変わった場合
     If SectionValue <> previousSection Then
-        sOutData = sOutData & SectionValue & vbCrLf & vbCrLf
+        sOutData = sOutData & "[" & SectionValue & "]" & vbCrLf & vbCrLf
         previousSection = SectionValue
     End If
 End Sub
@@ -191,14 +195,14 @@ Function Data_Type(iLine As Long, ws As Worksheet, ByRef sOutData As String)
     Dim FoundMatch As Boolean
 
     ' 初期化処理
-    DivisionValue = ws.Cells(iLine, IndividualColumnIndex.division).value  ' 個別設定シートのD列
-    KeyValue = ws.Cells(iLine, IndividualColumnIndex.key).value  ' 個別設定シートのF列
-    SetValue = ws.Cells(iLine, IndividualColumnIndex.setData).value  ' 個別設定シートのH列
+    DivisionValue = ws.Cells(iLine, IndividualColumnIndex2.division).value  ' 個別設定シートのD列
+    KeyValue = ws.Cells(iLine, IndividualColumnIndex2.key).value  ' 個別設定シートのF列
+    SetValue = ws.Cells(iLine, IndividualColumnIndex2.setData).value  ' 個別設定シートのH列
 
     Set BaseWS = ThisWorkbook.Worksheets("ベース設定")
 
     ' ベース設定シートの最終行を取得
-    LastRow = BaseWS.Cells(BaseWS.Rows.Count, BaseColumnPositions.division).End(xlUp).Row
+    LastRow = BaseWS.Cells(BaseWS.Rows.Count, BaseColumnPositions2.division).End(xlUp).Row
 
     FoundMatch = False
     
@@ -214,9 +218,9 @@ Function Data_Type(iLine As Long, ws As Worksheet, ByRef sOutData As String)
 
     ' ベース設定シートで区分をチェック
     For BaseRow = STARTROW To LastRow
-        BaseDivisionValue = BaseWS.Cells(BaseRow, BaseColumnPositions.division).value
+        BaseDivisionValue = BaseWS.Cells(BaseRow, BaseColumnPositions2.division).value
         If BaseDivisionValue = DivisionValue Then
-            DefaultValue = BaseWS.Cells(BaseRow, BaseColumnPositions.DefaultValue).value  ' ベース設定シートのG列
+            DefaultValue = BaseWS.Cells(BaseRow, BaseColumnPositions2.DefaultValue).value  ' ベース設定シートのG列
             sOutData = sOutData & ";" & DivisionValue & vbCrLf & _
                        KeyValue & " = " & DefaultValue & vbCrLf & vbCrLf
             FoundMatch = True
