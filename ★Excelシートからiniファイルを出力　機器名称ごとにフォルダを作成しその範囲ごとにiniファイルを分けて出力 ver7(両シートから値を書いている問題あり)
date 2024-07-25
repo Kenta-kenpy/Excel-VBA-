@@ -1,0 +1,246 @@
+'区分に対するキー値の値として、個別設定の設定値とベース設定のデフォルト値の場合で
+'両方とも出力させているようだ。→どちらの値を選んで出力させるかの処理が正しくない
+
+'列番号を変更の場合でも、一箇所の変更だけで済むように(列挙体)
+' ベース設定側の列
+Enum BaseColumnPositions
+    classification = 2 ' 分類列
+    division = 3       ' 区分列
+    key = 5            ' Key列
+    DefaultValue = 7   ' Value列(デフォルト値)
+End Enum
+
+' 個別設定側の列
+Enum IndividualColumnIndex
+    No = 1           ' No列
+    Device = 2      ' Device列
+    category = 3    ' Category列
+    division = 4    ' Division列
+    section = 5     ' Section列
+    key = 6         ' Key列
+    comment = 7     ' Comment列
+    setData = 8     ' SetData列
+    value = 9       ' Value列
+End Enum
+
+' データ範囲をConst定数で指定
+Const STARTROW As Integer = 6
+Const ENDROW As Integer = 20000
+
+' 文字エンコーディングと改行コードをConst定数で指定
+Const ENCODING As String = "UTF-8"
+Const LINE_SEPARATOR_CRLF As Long = -1
+
+Dim previousKey As String
+Dim previousValue As String
+
+Sub ArtINI()
+    Dim ws As Worksheet: Set ws = ThisWorkbook.Worksheets("個別設定")
+    ws.Activate
+    
+    Call MakeArtINI(True, "ArtSendTerm.ini", "動作条件設定ファイル(アート送出端末)_マクロ出力用")
+End Sub
+
+Function MakeArtINI(bMsgON As Boolean, oFile As String, oName As String) As Boolean
+    On Error GoTo myError
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.ActiveSheet
+    Dim sOutData As String
+    Dim folderPath As String
+    Dim strOutputFilePath As String
+    
+    ' ADODB.Streamの初期化
+    Dim outStream As Object
+    Set outStream = CreateObject("ADODB.Stream")
+    outStream.Charset = ENCODING
+    outStream.LineSeparator = LINE_SEPARATOR_CRLF
+    outStream.Open
+
+    ' ActiveWorkbookのパスを取得
+    Dim activeWorkbookPath As String
+    activeWorkbookPath = ThisWorkbook.path
+
+    Dim fs As Object
+    Set fs = CreateObject("Scripting.FileSystemObject")
+    
+    Dim iLine As Long: iLine = STARTROW
+    Dim rawDeviceValue As String
+    Dim rawDeviceValue2 As String
+    
+    ' 初期化
+    Dim previousCategory As String: previousCategory = ""
+    Dim previousSection As String: previousSection = ""
+    Dim previousKey As String: previousKey = ""
+    Dim previousValue As String: previousValue = ""
+    
+    Do While iLine <= ENDROW
+        If ws.Cells(iLine, IndividualColumnIndex.No).value = "" Then Exit Do
+
+        If ws.Cells(iLine, IndividualColumnIndex.Device).value <> "" Then
+            rawDeviceValue = ws.Cells(iLine, IndividualColumnIndex.Device).value
+
+            ' 機器名称が変更された場合にフォルダを作成
+            If rawDeviceValue <> rawDeviceValue2 Then
+                ' 前の機器名称でフォルダが存在すればINIファイルを保存
+                If rawDeviceValue2 <> "" Then
+                    folderPath = activeWorkbookPath & "\" & RemoveInvalidPathChars(rawDeviceValue2)
+                    strOutputFilePath = folderPath & "\" & oFile
+
+                    ' フォルダが存在しない場合は作成
+                    If Not fs.FolderExists(folderPath) Then
+                        fs.CreateFolder folderPath
+                    End If
+
+                    ' INIファイルの保存
+                    outStream.SaveToFile strOutputFilePath, 2 ' adSaveCreateOverWrite
+                    outStream.Flush
+                End If
+
+                ' 現在の機器名称を保存
+                rawDeviceValue2 = rawDeviceValue
+            End If
+        End If
+        
+        ' カテゴリとセクションのデータをフォーマットして出力
+        Call FormatCategoryAndSection(iLine, ws, sOutData)
+        If sOutData <> "" Then
+            outStream.WriteText sOutData
+        End If
+        
+        ' データのタイプと値を取得して出力
+        Call Data_Type(iLine, ws, sOutData)
+        If sOutData <> "" Then
+            outStream.WriteText sOutData
+        End If
+
+        iLine = iLine + 1
+    Loop
+
+    ' 最後の機器名称でフォルダを作成し、INIファイルを保存
+    If rawDeviceValue2 <> "" Then
+        folderPath = activeWorkbookPath & "\" & RemoveInvalidPathChars(rawDeviceValue2)
+        strOutputFilePath = folderPath & "\" & oFile
+
+        ' フォルダが存在しない場合は作成
+        If Not fs.FolderExists(folderPath) Then
+            fs.CreateFolder folderPath
+        End If
+        
+        ' INIファイルの保存
+        outStream.SaveToFile strOutputFilePath, 2 ' adSaveCreateOverWrite
+        outStream.Close
+    End If
+
+    MakeArtINI = True
+    If bMsgON Then
+        MsgBox "ファイル[" & strOutputFilePath & "]に出力しました", vbInformation, "動作条件設定ファイル出力"
+    End If
+
+    ' Excelファイルの保存
+    CreateObject("WScript.Shell").Run activeWorkbookPath
+    Exit Function
+
+myError:
+    MsgBox "動作条件設定ファイル出力でエラーが発生しました。" & vbCrLf & _
+            "エラー番号:" & Err.Number & vbCrLf & _
+            "エラーの種類:" & Err.Description, vbExclamation
+    MakeArtINI = False
+    If Not outStream Is Nothing Then outStream.Close
+End Function
+
+' 指定の行からカテゴリとセクションのデータを取得し、特定の形式で文字列を作成する関数
+Sub FormatCategoryAndSection(iLine As Long, ws As Worksheet, ByRef sOutData As String)
+    Dim CategoryValue As String
+    Dim SectionValue As String
+    Dim ClassificationValue As String ' ベース設定シートのB列の分類列の値
+
+    CategoryValue = ws.Cells(iLine, IndividualColumnIndex.category).value
+    SectionValue = ws.Cells(iLine, IndividualColumnIndex.section).value
+
+    ' ベース設定シートの分類列の値を取得
+    ClassificationValue = ws.Cells(iLine, BaseColumnPositions.classification).value
+
+    sOutData = ""
+
+    If CategoryValue <> previousCategory Then
+        sOutData = vbCrLf & ";-----------------------------------------------------------" & vbCrLf & _
+                   "; " & CategoryValue & vbCrLf & _
+                   ";-----------------------------------------------------------" & vbCrLf & _
+        previousCategory = CategoryValue
+    End If
+
+    If SectionValue <> previousSection Then
+        sOutData = sOutData & SectionValue & vbCrLf & vbCrLf
+        previousSection = SectionValue
+    End If
+End Sub
+
+' 指定の行からデータのタイプと値を取得して表示させる方法に関する関数
+' モジュールレベルで宣言する変数
+
+Function Data_Type(iLine As Long, ws As Worksheet, ByRef sOutData As String)
+    Dim DivisionValue As String
+    Dim KeyValue As String
+    Dim SetValue As String
+    Dim BaseWS As Worksheet
+    Dim BaseRow As Long
+    Dim LastRow As Long
+    Dim BaseDivisionValue As String
+    Dim DefaultValue As String
+    Dim FoundMatch As Boolean
+
+    ' 初期化処理
+    DivisionValue = ws.Cells(iLine, IndividualColumnIndex.division).value  ' 個別設定シートのD列
+    KeyValue = ws.Cells(iLine, IndividualColumnIndex.key).value  ' 個別設定シートのF列
+    SetValue = ws.Cells(iLine, IndividualColumnIndex.setData).value  ' 個別設定シートのH列
+
+    Set BaseWS = ThisWorkbook.Worksheets("ベース設定")
+
+    ' ベース設定シートの最終行を取得
+    LastRow = BaseWS.Cells(BaseWS.Rows.Count, BaseColumnPositions.division).End(xlUp).Row
+
+    FoundMatch = False
+    
+    sOutData = ""
+
+    ' KeyValue または SetValue が異なる場合に出力
+    If KeyValue <> previousKey Or SetValue <> previousValue Then
+        sOutData = sOutData & ";" & DivisionValue & vbCrLf & _
+                   KeyValue & " = " & SetValue & vbCrLf & vbCrLf
+        previousKey = KeyValue
+        previousValue = SetValue
+    End If
+
+    ' ベース設定シートで区分をチェック
+    For BaseRow = STARTROW To LastRow
+        BaseDivisionValue = BaseWS.Cells(BaseRow, BaseColumnPositions.division).value
+        If BaseDivisionValue = DivisionValue Then
+            DefaultValue = BaseWS.Cells(BaseRow, BaseColumnPositions.DefaultValue).value  ' ベース設定シートのG列
+            sOutData = sOutData & ";" & DivisionValue & vbCrLf & _
+                       KeyValue & " = " & DefaultValue & vbCrLf & vbCrLf
+            FoundMatch = True
+            Exit For
+        End If
+    Next BaseRow
+
+    ' もしベース設定シートに一致する区分が見つからなかった場合
+    If Not FoundMatch Then
+        sOutData = sOutData & ";" & DivisionValue & vbCrLf & _
+                   KeyValue & " = " & "Not Found" & vbCrLf & vbCrLf
+    End If
+End Function
+
+' 無効な文字を除去する関数
+Function RemoveInvalidPathChars(str As String) As String
+    Dim invalidChars As String
+    Dim i As Integer
+    Dim ch As String
+    invalidChars = "\/:*?""<>|"
+    RemoveInvalidPathChars = str
+    
+    For i = 1 To Len(invalidChars)
+        ch = Mid(invalidChars, i, 1)
+        RemoveInvalidPathChars = Replace(RemoveInvalidPathChars, ch, "")
+    Next i
+End Function
